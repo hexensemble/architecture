@@ -20,7 +20,10 @@ target
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-
-# Added by cargo
-
-/target
+# OS generated files
+.DS_Store
+.Spotlight-V100
+.Trashes
+._*
+ehthumbs.db
+Thumbs.db
