@@ -1,17 +1,47 @@
-use crate::core::state::{State, StateControl};
-use crate::core::state_manager::StateManager;
 use raylib::prelude::*;
+
+pub trait Layer {
+    fn update(&mut self, rl: &mut RaylibHandle) -> LayerControl;
+    fn render(&mut self, d: &mut RaylibDrawHandle);
+}
+
+pub struct LayerControl {
+    pub change_layer: bool,
+    pub next_layer: Option<Box<dyn Layer>>,
+    pub running: bool,
+}
+
+impl LayerControl {
+    pub fn continue_running() -> Self {
+        Self {
+            change_layer: false,
+            next_layer: None,
+            running: true,
+        }
+    }
+
+    pub fn change_layer(next_layer: Option<Box<dyn Layer>>) -> Self {
+        Self {
+            change_layer: true,
+            next_layer,
+            running: true,
+        }
+    }
+
+    pub fn quit() -> Self {
+        Self {
+            change_layer: false,
+            next_layer: None,
+            running: false,
+        }
+    }
+}
 
 pub struct ApplicationSpecification {
     pub title: String,
     pub width: i32,
     pub height: i32,
     pub fps: u32,
-}
-
-pub trait Layer {
-    fn update(&self, rl: &mut RaylibHandle) -> StateControl;
-    fn render(&self, rl: &mut RaylibHandle, thread: &RaylibThread);
 }
 
 pub struct Application {
@@ -38,6 +68,11 @@ impl Application {
         }
     }
 
+    pub fn set_initial_layer(&mut self, layer: Box<dyn Layer>) {
+        self.clear_layers();
+        self.push_layer(layer);
+    }
+
     pub fn clear_layers(&mut self) {
         self.layers.clear();
     }
@@ -46,8 +81,11 @@ impl Application {
         self.layers.push(layer);
     }
 
-    pub fn run(&mut self, state_manager: &mut StateManager) {
-        state_manager.set_state(State::Menu, self);
+    pub fn run(&mut self) {
+        if self.layers.is_empty() {
+            eprintln!("Error: No initial layer set!");
+            panic!();
+        }
 
         while self.running {
             if self.rl.window_should_close() {
@@ -57,17 +95,22 @@ impl Application {
 
             // Update
             for layer in self.layers.iter_mut() {
-                match layer.update(&mut self.rl) {
-                    StateControl::Continue => {}
-                    StateControl::Stop => {
-                        self.stop();
-                        break;
+                let layer_control = layer.update(&mut self.rl);
+
+                if layer_control.change_layer {
+                    self.clear_layers();
+
+                    if let Some(layer) = layer_control.next_layer {
+                        self.push_layer(layer);
                     }
-                    StateControl::Change(state) => {
-                        state_manager.next = Some(state);
-                        state_manager.change = true;
-                        break;
-                    }
+
+                    break;
+                }
+
+                if !layer_control.running {
+                    self.stop();
+
+                    break;
                 }
             }
 
@@ -75,18 +118,12 @@ impl Application {
                 continue;
             }
 
-            if state_manager.change {
-                if let Some(state) = state_manager.next {
-                    state_manager.set_state(state, self);
-                }
-
-                state_manager.next = None;
-                state_manager.change = false;
-            }
-
             // Render
+            let mut d = self.rl.begin_drawing(&self.thread);
+            d.clear_background(Color::WHITE);
+
             for layer in self.layers.iter_mut() {
-                layer.render(&mut self.rl, &self.thread);
+                layer.render(&mut d);
             }
         }
     }

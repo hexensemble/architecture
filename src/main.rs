@@ -1,5 +1,5 @@
+use crate::app::layers::menu::MenuLayer;
 use crate::core::application::*;
-use crate::core::state_manager::*;
 
 mod app;
 mod core;
@@ -14,7 +14,6 @@ fn main() {
 
     let mut app = Application::new(app_spec);
 
-    let mut state_manager = StateManager::new();
-
-    app.run(&mut state_manager);
+    app.set_initial_layer(Box::new(MenuLayer));
+    app.run();
 }

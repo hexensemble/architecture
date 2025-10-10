@@ -1,24 +1,23 @@
-use crate::core::application::Layer;
-use crate::core::state::{State, StateControl};
+use crate::app::layers::game::GameLayer;
+use crate::core::application::*;
 use raylib::prelude::*;
 
 pub struct MenuLayer;
 
 impl Layer for MenuLayer {
-    fn update(&self, rl: &mut RaylibHandle) -> StateControl {
+    fn update(&mut self, rl: &mut RaylibHandle) -> LayerControl {
         if rl.is_key_pressed(KeyboardKey::KEY_Q) {
-            return StateControl::Stop;
+            return LayerControl::quit();
         }
 
         if rl.is_key_pressed(KeyboardKey::KEY_SPACE) {
-            return StateControl::Change(State::Game);
+            return LayerControl::change_layer(Some(Box::new(GameLayer)));
         }
 
-        StateControl::Continue
+        LayerControl::continue_running()
     }
 
-    fn render(&self, rl: &mut RaylibHandle, thread: &RaylibThread) {
-        let mut d = rl.begin_drawing(thread);
-        d.clear_background(Color::WHITE);
+    fn render(&mut self, d: &mut RaylibDrawHandle) {
+        d.draw_text("This is the menu layer!", 12, 12, 20, Color::BLACK);
     }
 }
