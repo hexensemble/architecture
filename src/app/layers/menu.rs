@@ -5,19 +5,19 @@ use raylib::prelude::*;
 pub struct MenuLayer;
 
 impl Layer for MenuLayer {
-    fn update(&mut self, rl: &mut RaylibHandle) -> LayerControl {
+    fn on_update(&mut self, rl: &mut RaylibHandle) -> LayerCommand {
         if rl.is_key_pressed(KeyboardKey::KEY_Q) {
-            return LayerControl::quit();
+            return LayerCommand::Quit;
         }
 
         if rl.is_key_pressed(KeyboardKey::KEY_SPACE) {
-            return LayerControl::change_layer(Some(Box::new(GameLayer)));
+            return LayerCommand::Replace(Box::new(GameLayer));
         }
 
-        LayerControl::continue_running()
+        LayerCommand::None
     }
 
-    fn render(&mut self, d: &mut RaylibDrawHandle) {
+    fn on_render(&mut self, d: &mut RaylibDrawHandle) {
         d.draw_text("This is the menu layer!", 12, 12, 20, Color::BLACK);
     }
 }
