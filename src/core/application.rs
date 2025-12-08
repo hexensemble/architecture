@@ -1,17 +1,6 @@
+use crate::core::event::*;
+use crate::core::layer::*;
 use raylib::prelude::*;
-
-pub trait Layer {
-    fn on_update(&mut self, rl: &mut RaylibHandle) -> LayerCommand;
-    fn on_render(&mut self, d: &mut RaylibDrawHandle);
-}
-
-pub enum LayerCommand {
-    None,
-    Push(Box<dyn Layer>),
-    Pop,
-    Replace(Box<dyn Layer>),
-    Quit,
-}
 
 pub struct ApplicationSpecification {
     pub title: String,
@@ -61,28 +50,20 @@ impl Application {
                 break;
             }
 
-            // Update
-            if let Some(top_layer) = self.layers.last_mut() {
-                match top_layer.on_update(&mut self.rl) {
-                    LayerCommand::None => {}
-                    LayerCommand::Push(layer) => {
-                        self.layers.push(layer);
-                    }
-                    LayerCommand::Pop => {
-                        self.layers.pop();
-
-                        if self.layers.is_empty() {
-                            self.stop();
-                        }
-                    }
-                    LayerCommand::Replace(layer) => {
-                        self.layers.clear();
-                        self.layers.push(layer);
-                    }
-                    LayerCommand::Quit => {
-                        self.stop();
+            // Events
+            let events = collect_events(&self.rl);
+            for event in events {
+                for layer in self.layers.iter_mut().rev() {
+                    if let Some(command) = layer.on_event(&event) {
+                        self.handle_layer_command(command);
+                        break;
                     }
                 }
+            }
+
+            // Update
+            if let Some(top_layer) = self.layers.last_mut() {
+                top_layer.on_update(&mut self.rl);
             }
 
             if !self.running {
@@ -99,7 +80,30 @@ impl Application {
         }
     }
 
-    pub fn stop(&mut self) {
+    fn handle_layer_command(&mut self, command: LayerCommand) {
+        match command {
+            LayerCommand::None => {}
+            LayerCommand::Push(layer) => {
+                self.layers.push(layer);
+            }
+            LayerCommand::Pop => {
+                self.layers.pop();
+
+                if self.layers.is_empty() {
+                    self.stop();
+                }
+            }
+            LayerCommand::Replace(layer) => {
+                self.layers.clear();
+                self.layers.push(layer);
+            }
+            LayerCommand::Quit => {
+                self.stop();
+            }
+        }
+    }
+
+    fn stop(&mut self) {
         self.running = false;
     }
 }
