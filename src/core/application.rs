@@ -1,3 +1,4 @@
+use crate::core::context::*;
 use crate::core::event::*;
 use crate::core::layer::*;
 use raylib::prelude::*;
@@ -12,6 +13,7 @@ pub struct ApplicationSpecification {
 pub struct Application {
     rl: RaylibHandle,
     thread: RaylibThread,
+    ctx: AppContext,
     layers: Vec<Box<dyn Layer>>,
     running: bool,
 }
@@ -28,6 +30,7 @@ impl Application {
         Application {
             rl,
             thread,
+            ctx: AppContext { debug: false },
             layers: Vec::new(),
             running: true,
         }
@@ -35,7 +38,7 @@ impl Application {
 
     pub fn set_initial_layer(&mut self, mut layer: Box<dyn Layer>) {
         self.layers.clear();
-        layer.on_attach();
+        layer.on_attach(&mut self.ctx);
         self.layers.push(layer);
     }
 
@@ -55,7 +58,7 @@ impl Application {
             let events = collect_events(&self.rl);
             for event in events {
                 for layer in self.layers.iter_mut().rev() {
-                    if let Some(command) = layer.on_event(&event) {
+                    if let Some(command) = layer.on_event(&mut self.ctx, &event) {
                         self.handle_layer_command(command);
                         break;
                     }
@@ -64,7 +67,7 @@ impl Application {
 
             // Update
             if let Some(top_layer) = self.layers.last_mut() {
-                top_layer.on_update(&mut self.rl);
+                top_layer.on_update(&mut self.ctx, &mut self.rl);
             }
 
             if !self.running {
@@ -76,7 +79,7 @@ impl Application {
             d.clear_background(Color::WHITE);
 
             for layer in self.layers.iter_mut() {
-                layer.on_render(&mut d);
+                layer.on_render(&self.ctx, &mut d);
             }
         }
     }
@@ -85,12 +88,12 @@ impl Application {
         match command {
             LayerCommand::None => {}
             LayerCommand::Push(mut layer) => {
-                layer.on_attach();
+                layer.on_attach(&mut self.ctx);
                 self.layers.push(layer);
             }
             LayerCommand::Pop => {
                 if let Some(mut layer) = self.layers.pop() {
-                    layer.on_detach();
+                    layer.on_detach(&mut self.ctx);
                 }
 
                 if self.layers.is_empty() {
@@ -99,10 +102,10 @@ impl Application {
             }
             LayerCommand::Replace(mut layer) => {
                 for mut old_layer in self.layers.drain(..) {
-                    old_layer.on_detach();
+                    old_layer.on_detach(&mut self.ctx);
                 }
 
-                layer.on_attach();
+                layer.on_attach(&mut self.ctx);
                 self.layers.push(layer);
             }
             LayerCommand::Quit => {
@@ -113,7 +116,7 @@ impl Application {
 
     fn stop(&mut self) {
         while let Some(mut layer) = self.layers.pop() {
-            layer.on_detach();
+            layer.on_detach(&mut self.ctx);
         }
 
         self.running = false;

@@ -1,13 +1,14 @@
+use crate::core::context::*;
 use crate::core::event::*;
 use raylib::prelude::*;
 
 pub trait Layer {
-    fn on_event(&mut self, event: &Event) -> Option<LayerCommand>;
-    fn on_update(&mut self, rl: &mut RaylibHandle);
-    fn on_render(&mut self, d: &mut RaylibDrawHandle);
+    fn on_event(&mut self, ctx: &mut AppContext, event: &Event) -> Option<LayerCommand>;
+    fn on_update(&mut self, ctx: &mut AppContext, rl: &mut RaylibHandle);
+    fn on_render(&mut self, ctx: &AppContext, d: &mut RaylibDrawHandle);
 
-    fn on_attach(&mut self);
-    fn on_detach(&mut self);
+    fn on_attach(&mut self, ctx: &mut AppContext);
+    fn on_detach(&mut self, ctx: &mut AppContext);
 }
 
 pub enum LayerCommand {
