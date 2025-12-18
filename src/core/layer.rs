@@ -5,6 +5,9 @@ pub trait Layer {
     fn on_event(&mut self, event: &Event) -> Option<LayerCommand>;
     fn on_update(&mut self, rl: &mut RaylibHandle);
     fn on_render(&mut self, d: &mut RaylibDrawHandle);
+
+    fn on_attach(&mut self);
+    fn on_detach(&mut self);
 }
 
 pub enum LayerCommand {

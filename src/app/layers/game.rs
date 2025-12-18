@@ -23,4 +23,12 @@ impl Layer for GameLayer {
     fn on_render(&mut self, d: &mut RaylibDrawHandle) {
         d.draw_text("This is the game layer!", 12, 12, 20, Color::BLACK);
     }
+
+    fn on_attach(&mut self) {
+        println!("Attaching game layer...");
+    }
+
+    fn on_detach(&mut self) {
+        println!("Detaching game layer...");
+    }
 }

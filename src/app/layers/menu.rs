@@ -21,4 +21,12 @@ impl Layer for MenuLayer {
     fn on_render(&mut self, d: &mut RaylibDrawHandle) {
         d.draw_text("This is the menu layer!", 12, 12, 20, Color::BLACK);
     }
+
+    fn on_attach(&mut self) {
+        println!("Attaching menu layer...");
+    }
+
+    fn on_detach(&mut self) {
+        println!("Detaching menu layer...");
+    }
 }

@@ -33,8 +33,9 @@ impl Application {
         }
     }
 
-    pub fn set_initial_layer(&mut self, layer: Box<dyn Layer>) {
+    pub fn set_initial_layer(&mut self, mut layer: Box<dyn Layer>) {
         self.layers.clear();
+        layer.on_attach();
         self.layers.push(layer);
     }
 
@@ -83,18 +84,25 @@ impl Application {
     fn handle_layer_command(&mut self, command: LayerCommand) {
         match command {
             LayerCommand::None => {}
-            LayerCommand::Push(layer) => {
+            LayerCommand::Push(mut layer) => {
+                layer.on_attach();
                 self.layers.push(layer);
             }
             LayerCommand::Pop => {
-                self.layers.pop();
+                if let Some(mut layer) = self.layers.pop() {
+                    layer.on_detach();
+                }
 
                 if self.layers.is_empty() {
                     self.stop();
                 }
             }
-            LayerCommand::Replace(layer) => {
-                self.layers.clear();
+            LayerCommand::Replace(mut layer) => {
+                for mut old_layer in self.layers.drain(..) {
+                    old_layer.on_detach();
+                }
+
+                layer.on_attach();
                 self.layers.push(layer);
             }
             LayerCommand::Quit => {
@@ -104,6 +112,10 @@ impl Application {
     }
 
     fn stop(&mut self) {
+        while let Some(mut layer) = self.layers.pop() {
+            layer.on_detach();
+        }
+
         self.running = false;
     }
 }

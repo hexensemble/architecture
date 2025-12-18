@@ -17,4 +17,12 @@ impl Layer for PauseLayer {
     fn on_render(&mut self, d: &mut RaylibDrawHandle) {
         d.draw_text("This is the menu layer!", 200, 200, 30, Color::RED);
     }
+
+    fn on_attach(&mut self) {
+        println!("Attaching pause layer...");
+    }
+
+    fn on_detach(&mut self) {
+        println!("Detaching pause layer...");
+    }
 }
