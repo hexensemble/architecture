@@ -1,6 +1,8 @@
+use crate::core::action::*;
 use crate::core::context::*;
 use crate::core::event::*;
 use crate::core::layer::*;
+use crate::core::settings::*;
 use raylib::prelude::*;
 
 pub struct ApplicationSpecification {
@@ -30,7 +32,10 @@ impl Application {
         Application {
             rl,
             thread,
-            ctx: AppContext { debug: false },
+            ctx: AppContext {
+                settings: Settings::default(),
+                actions: Actions::new(),
+            },
             layers: Vec::new(),
             running: true,
         }
@@ -49,6 +54,8 @@ impl Application {
         }
 
         while self.running {
+            self.ctx.actions.clear();
+
             if self.rl.window_should_close() {
                 self.stop();
                 break;
@@ -57,17 +64,24 @@ impl Application {
             // Events
             let events = collect_events(&self.rl);
             for event in events {
-                for layer in self.layers.iter_mut().rev() {
-                    if let Some(command) = layer.on_event(&mut self.ctx, &event) {
-                        self.handle_layer_command(command);
-                        break;
+                match event {
+                    Event::KeyPressed(key) => {
+                        if let Some(action) =
+                            self.ctx.settings.input_bindings.key_bindings.get(&key)
+                        {
+                            self.ctx.actions.push(*action);
+                            println!("{:?}", action);
+                        }
                     }
+                    Event::MousePosition(_) => {}
                 }
             }
 
             // Update
             if let Some(top_layer) = self.layers.last_mut() {
-                top_layer.on_update(&mut self.ctx, &mut self.rl);
+                if let Some(cmd) = top_layer.on_update(&mut self.ctx, &mut self.rl) {
+                    self.handle_layer_command(cmd);
+                }
             }
 
             if !self.running {

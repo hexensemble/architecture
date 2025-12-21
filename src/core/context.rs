@@ -1,3 +1,7 @@
+use crate::core::action::*;
+use crate::core::settings::*;
+
 pub struct AppContext {
-    pub debug: bool,
+    pub settings: Settings,
+    pub actions: Actions,
 }
