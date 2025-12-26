@@ -11,11 +11,11 @@ impl Layer for MenuLayer {
     fn on_event(&mut self, ctx: &mut AppContext, event: &Event) {}
 
     fn on_update(&mut self, ctx: &mut AppContext, rl: &mut RaylibHandle) -> Option<LayerCommand> {
-        if ctx.actions.contains(Action::Confirm) {
+        if ctx.actions.take(Action::Confirm) {
             return Some(LayerCommand::Replace(Box::new(GameLayer)));
         }
 
-        if ctx.actions.contains(Action::Quit) {
+        if ctx.actions.take(Action::Quit) {
             return Some(LayerCommand::Quit);
         }
 

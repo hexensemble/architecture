@@ -27,4 +27,13 @@ impl Actions {
     pub fn contains(&self, action: Action) -> bool {
         self.actions.contains(&action)
     }
+
+    pub fn take(&mut self, action: Action) -> bool {
+        if let Some(index) = self.actions.iter().position(|a| *a == action) {
+            self.actions.remove(index);
+            true
+        } else {
+            false
+        }
+    }
 }

@@ -10,7 +10,7 @@ impl Layer for PauseLayer {
     fn on_event(&mut self, ctx: &mut AppContext, event: &Event) {}
 
     fn on_update(&mut self, ctx: &mut AppContext, rl: &mut RaylibHandle) -> Option<LayerCommand> {
-        if ctx.actions.contains(Action::Pause) {
+        if ctx.actions.take(Action::Pause) {
             return Some(LayerCommand::Pop);
         } else {
             return Some(LayerCommand::None);
