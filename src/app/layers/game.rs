@@ -12,6 +12,9 @@ impl Layer for GameLayer {
     fn on_event(&mut self, ctx: &mut AppContext, event: &Event) {}
 
     fn on_update(&mut self, ctx: &mut AppContext, rl: &mut RaylibHandle) -> Option<LayerCommand> {
+        let dt = ctx.time.get_time();
+        println!("Time: {}", dt);
+
         if ctx.actions.take(Action::Confirm) {
             return Some(LayerCommand::Replace(Box::new(MenuLayer)));
         }

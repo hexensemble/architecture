@@ -3,6 +3,7 @@ use crate::core::context::*;
 use crate::core::event::*;
 use crate::core::layer::*;
 use crate::core::settings::*;
+use crate::core::time::*;
 use raylib::prelude::*;
 
 pub struct ApplicationSpecification {
@@ -35,6 +36,7 @@ impl Application {
             ctx: AppContext {
                 settings: Settings::default(),
                 actions: Actions::new(),
+                time: Time::new(),
             },
             layers: Vec::new(),
             running: true,
@@ -54,8 +56,14 @@ impl Application {
         }
 
         while self.running {
+            // Clear actions
             self.ctx.actions.clear();
 
+            // Update delta time
+            let delta = self.rl.get_frame_time();
+            self.ctx.time.update(delta);
+
+            // Window close check
             if self.rl.window_should_close() {
                 self.stop();
                 break;
