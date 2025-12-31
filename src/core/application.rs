@@ -75,7 +75,7 @@ impl Application {
                 match event {
                     Event::KeyPressed(key) => {
                         if let Some(action) =
-                            self.ctx.settings.input_bindings.key_bindings.get(&key)
+                            self.ctx.settings.input_bindings.key_bindings().get(&key)
                         {
                             self.ctx.actions.push(*action);
                             println!("{:?}", action);

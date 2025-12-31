@@ -17,7 +17,7 @@ impl Settings {
 }
 
 pub struct InputBindings {
-    pub key_bindings: HashMap<KeyboardKey, Action>,
+    key_bindings: HashMap<KeyboardKey, Action>,
 }
 
 impl InputBindings {
@@ -32,5 +32,9 @@ impl InputBindings {
         Self {
             key_bindings: default_keys,
         }
+    }
+
+    pub fn key_bindings(&self) -> &HashMap<KeyboardKey, Action> {
+        &self.key_bindings
     }
 }

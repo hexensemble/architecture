@@ -12,7 +12,7 @@ impl Layer for MenuLayer {
 
     fn on_update(&mut self, ctx: &mut AppContext, rl: &mut RaylibHandle) -> Option<LayerCommand> {
         if ctx.actions.take(Action::Confirm) {
-            return Some(LayerCommand::Replace(Box::new(GameLayer)));
+            return Some(LayerCommand::Replace(Box::new(GameLayer::new())));
         }
 
         if ctx.actions.take(Action::Quit) {

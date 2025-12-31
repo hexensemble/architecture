@@ -17,7 +17,7 @@ impl Time {
         self.elapsed += delta;
     }
 
-    pub fn get_time(&self) -> f32 {
+    pub fn delta(&self) -> f32 {
         self.delta
     }
 }
