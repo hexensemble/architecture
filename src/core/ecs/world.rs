@@ -1,5 +1,6 @@
 use crate::core::ecs::resources::*;
 use hecs::World;
+use raylib::prelude::*;
 
 pub struct EcsWorld {
     world: World,
@@ -16,7 +17,18 @@ impl EcsWorld {
     where
         F: FnMut(&EcsResources, &mut World),
     {
-        f(resources, self.world_mut())
+        f(resources, &mut self.world)
+    }
+
+    pub fn run_render_system<F>(&self, d: &mut RaylibDrawHandle, f: F)
+    where
+        F: Fn(&mut RaylibDrawHandle, &World),
+    {
+        f(d, &self.world);
+    }
+
+    pub fn world(&self) -> &World {
+        &self.world
     }
 
     pub fn world_mut(&mut self) -> &mut World {

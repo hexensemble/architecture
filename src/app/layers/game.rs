@@ -1,5 +1,6 @@
 use crate::app::ecs::components::movement::*;
 use crate::app::ecs::systems::movement::*;
+use crate::app::ecs::systems::render::*;
 use crate::app::layers::menu::MenuLayer;
 use crate::app::layers::pause::PauseLayer;
 use crate::core::action::*;
@@ -56,9 +57,7 @@ impl Layer for GameLayer {
     fn on_render(&mut self, ctx: &AppContext, d: &mut RaylibDrawHandle) {
         d.draw_text("This is the game layer!", 12, 12, 20, Color::BLACK);
 
-        for (_, pos) in self.ecs.world_mut().query::<&Position>().iter() {
-            d.draw_circle(pos.x as i32, pos.y as i32, 10.0, Color::BLUE);
-        }
+        self.ecs.run_render_system(d, draw_positions);
     }
 
     fn on_attach(&mut self, ctx: &mut AppContext) {
