@@ -1,4 +1,4 @@
-use crate::app::layers::menu::MenuLayer;
+use crate::app::*;
 use crate::core::application::*;
 
 mod app;
@@ -14,6 +14,6 @@ fn main() {
 
     let mut app = Application::new(app_spec);
 
-    app.set_initial_layer(Box::new(MenuLayer));
+    app.set_initial_layer(initial_layer());
     app.run();
 }
