@@ -5,7 +5,9 @@ use crate::core::layer::*;
 use crate::core::settings::*;
 use crate::core::time::*;
 use raylib::prelude::*;
+use serde::{Deserialize, Serialize};
 
+#[derive(Deserialize, Serialize)]
 pub struct ApplicationSpecification {
     pub title: String,
     pub width: i32,
