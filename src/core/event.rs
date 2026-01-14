@@ -1,4 +1,4 @@
-use crate::app::keys::*;
+use crate::core::settings::*;
 use raylib::prelude::*;
 
 pub enum Event {
@@ -6,10 +6,10 @@ pub enum Event {
     MousePosition(Vector2),
 }
 
-pub fn collect_events(rl: &RaylibHandle) -> Vec<Event> {
+pub fn collect_events(rl: &RaylibHandle, bindings: &InputBindings) -> Vec<Event> {
     let mut events = Vec::new();
 
-    for key in KEYS {
+    for key in bindings.key_bindings().keys() {
         if rl.is_key_pressed(*key) {
             events.push(Event::KeyPressed(*key));
         }

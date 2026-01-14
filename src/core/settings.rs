@@ -3,7 +3,7 @@ use raylib::prelude::*;
 use std::collections::HashMap;
 
 pub struct Settings {
-    pub input_bindings: InputBindings,
+    pub bindings: InputBindings,
 }
 
 impl Settings {
@@ -11,30 +11,39 @@ impl Settings {
         let default_bindings = InputBindings::default();
 
         Self {
-            input_bindings: default_bindings,
+            bindings: default_bindings,
         }
     }
 }
 
 pub struct InputBindings {
     key_bindings: HashMap<KeyboardKey, Action>,
+    pad_bindings: HashMap<GamepadButton, Action>,
 }
 
 impl InputBindings {
     pub fn default() -> Self {
-        let mut default_keys = HashMap::new();
-
-        default_keys.insert(KeyboardKey::KEY_ENTER, Action::Confirm);
-        default_keys.insert(KeyboardKey::KEY_SPACE, Action::Confirm);
-        default_keys.insert(KeyboardKey::KEY_P, Action::Pause);
-        default_keys.insert(KeyboardKey::KEY_Q, Action::Quit);
-
         Self {
-            key_bindings: default_keys,
+            key_bindings: HashMap::new(),
+            pad_bindings: HashMap::new(),
+        }
+    }
+
+    pub fn new(
+        key_bindings: HashMap<KeyboardKey, Action>,
+        pad_bindings: HashMap<GamepadButton, Action>,
+    ) -> Self {
+        Self {
+            key_bindings,
+            pad_bindings,
         }
     }
 
     pub fn key_bindings(&self) -> &HashMap<KeyboardKey, Action> {
         &self.key_bindings
+    }
+
+    pub fn pad_bindings(&self) -> &HashMap<GamepadButton, Action> {
+        &self.pad_bindings
     }
 }

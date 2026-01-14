@@ -51,6 +51,10 @@ impl Application {
         self.layers.push(layer);
     }
 
+    pub fn set_bindings(&mut self, bindings: InputBindings) {
+        self.ctx.settings.bindings = bindings;
+    }
+
     pub fn run(&mut self) {
         if self.layers.is_empty() {
             eprintln!("Error: No initial layer set!");
@@ -72,13 +76,11 @@ impl Application {
             }
 
             // Events
-            let events = collect_events(&self.rl);
+            let events = collect_events(&self.rl, &self.ctx.settings.bindings);
             for event in events {
                 match event {
                     Event::KeyPressed(key) => {
-                        if let Some(action) =
-                            self.ctx.settings.input_bindings.key_bindings().get(&key)
-                        {
+                        if let Some(action) = self.ctx.settings.bindings.key_bindings().get(&key) {
                             self.ctx.actions.push(*action);
                             println!("{:?}", action);
                         }

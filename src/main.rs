@@ -13,6 +13,7 @@ fn main() {
             let mut app = Application::new(app_spec);
 
             app.set_initial_layer(crate::app::initial_layer());
+            app.set_bindings(crate::app::bindings());
             app.run();
         }
         Err(e) => {
