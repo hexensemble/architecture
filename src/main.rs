@@ -12,9 +12,7 @@ fn main() {
         Ok(app_spec) => {
             let mut app = Application::new(app_spec);
 
-            app.set_initial_layer(crate::app::initial_layer());
-            app.set_bindings(crate::app::bindings());
-            app.run();
+            app.run(crate::app::initial_layer(), crate::app::bindings());
         }
         Err(e) => {
             eprintln!("Error! {e}");

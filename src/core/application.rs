@@ -45,17 +45,10 @@ impl Application {
         }
     }
 
-    pub fn set_initial_layer(&mut self, mut layer: Box<dyn Layer>) {
-        self.layers.clear();
-        layer.on_attach(&mut self.ctx);
-        self.layers.push(layer);
-    }
+    pub fn run(&mut self, initial_layer: Box<dyn Layer>, bindings: InputBindings) {
+        self.set_initial_layer(initial_layer);
+        self.set_bindings(bindings);
 
-    pub fn set_bindings(&mut self, bindings: InputBindings) {
-        self.ctx.settings.bindings = bindings;
-    }
-
-    pub fn run(&mut self) {
         if self.layers.is_empty() {
             eprintln!("Error: No initial layer set!");
             panic!();
@@ -90,10 +83,10 @@ impl Application {
             }
 
             // Update
-            if let Some(top_layer) = self.layers.last_mut() {
-                if let Some(cmd) = top_layer.on_update(&mut self.ctx, &mut self.rl) {
-                    self.handle_layer_command(cmd);
-                }
+            if let Some(top_layer) = self.layers.last_mut()
+                && let Some(cmd) = top_layer.on_update(&mut self.ctx, &mut self.rl)
+            {
+                self.handle_layer_command(cmd);
             }
 
             if !self.running {
@@ -108,6 +101,16 @@ impl Application {
                 layer.on_render(&self.ctx, &mut d);
             }
         }
+    }
+
+    fn set_initial_layer(&mut self, mut layer: Box<dyn Layer>) {
+        self.layers.clear();
+        layer.on_attach(&mut self.ctx);
+        self.layers.push(layer);
+    }
+
+    fn set_bindings(&mut self, bindings: InputBindings) {
+        self.ctx.settings.bindings = bindings;
     }
 
     fn handle_layer_command(&mut self, command: LayerCommand) {
