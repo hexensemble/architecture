@@ -70,10 +70,16 @@ impl Application {
 
             // Events
             let events = collect_events(&self.rl, &self.ctx.settings.bindings);
-            for event in events {
+            for event in &events {
+                // Send event to current top layer - For events that need immediate processing before the update phase.
+                if let Some(top_layer) = self.layers.last_mut() {
+                    top_layer.on_event(&mut self.ctx, event);
+                }
+
+                // Send event to actions list - For actions handled later during update.
                 match event {
                     Event::KeyPressed(key) => {
-                        if let Some(action) = self.ctx.settings.bindings.key_bindings().get(&key) {
+                        if let Some(action) = self.ctx.settings.bindings.key_bindings().get(key) {
                             self.ctx.actions.push(*action);
                             println!("{:?}", action);
                         }
