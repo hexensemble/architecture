@@ -1,3 +1,4 @@
+use crate::core::action::*;
 use crate::core::ecs::resources::*;
 use hecs::World;
 use raylib::prelude::*;
@@ -13,9 +14,10 @@ impl EcsWorld {
         }
     }
 
-    pub fn run_system<F>(&mut self, resources: &EcsResources, mut f: F)
+    pub fn run_system<A, F>(&mut self, resources: &EcsResources<A>, mut f: F)
     where
-        F: FnMut(&EcsResources, &mut World),
+        A: ActionType,
+        F: FnMut(&EcsResources<A>, &mut World),
     {
         f(resources, &mut self.world)
     }

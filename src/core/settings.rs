@@ -2,11 +2,11 @@ use crate::core::action::*;
 use raylib::prelude::*;
 use std::collections::HashMap;
 
-pub struct Settings {
-    pub bindings: InputBindings,
+pub struct Settings<A: ActionType> {
+    pub bindings: InputBindings<A>,
 }
 
-impl Settings {
+impl<A: ActionType> Settings<A> {
     pub fn default() -> Self {
         let default_bindings = InputBindings::default();
 
@@ -16,12 +16,12 @@ impl Settings {
     }
 }
 
-pub struct InputBindings {
-    key_bindings: HashMap<KeyboardKey, Action>,
-    pad_bindings: HashMap<GamepadButton, Action>,
+pub struct InputBindings<A: ActionType> {
+    key_bindings: HashMap<KeyboardKey, A>,
+    pad_bindings: HashMap<GamepadButton, A>,
 }
 
-impl InputBindings {
+impl<A: ActionType> InputBindings<A> {
     pub fn default() -> Self {
         Self {
             key_bindings: HashMap::new(),
@@ -30,8 +30,8 @@ impl InputBindings {
     }
 
     pub fn new(
-        key_bindings: HashMap<KeyboardKey, Action>,
-        pad_bindings: HashMap<GamepadButton, Action>,
+        key_bindings: HashMap<KeyboardKey, A>,
+        pad_bindings: HashMap<GamepadButton, A>,
     ) -> Self {
         Self {
             key_bindings,
@@ -39,11 +39,11 @@ impl InputBindings {
         }
     }
 
-    pub fn key_bindings(&self) -> &HashMap<KeyboardKey, Action> {
+    pub fn key_bindings(&self) -> &HashMap<KeyboardKey, A> {
         &self.key_bindings
     }
 
-    pub fn pad_bindings(&self) -> &HashMap<GamepadButton, Action> {
+    pub fn pad_bindings(&self) -> &HashMap<GamepadButton, A> {
         &self.pad_bindings
     }
 }

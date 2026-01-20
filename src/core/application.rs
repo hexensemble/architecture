@@ -15,15 +15,15 @@ pub struct ApplicationSpecification {
     pub fps: u32,
 }
 
-pub struct Application {
+pub struct Application<A: ActionType> {
     rl: RaylibHandle,
     thread: RaylibThread,
-    ctx: AppContext,
-    layers: Vec<Box<dyn Layer>>,
+    ctx: AppContext<A>,
+    layers: Vec<Box<dyn Layer<A>>>,
     running: bool,
 }
 
-impl Application {
+impl<A: ActionType> Application<A> {
     pub fn new(spec: ApplicationSpecification) -> Self {
         let (mut rl, thread) = raylib::init()
             .size(spec.width, spec.height)
@@ -45,7 +45,7 @@ impl Application {
         }
     }
 
-    pub fn run(&mut self, initial_layer: Box<dyn Layer>, bindings: InputBindings) {
+    pub fn run(&mut self, initial_layer: Box<dyn Layer<A>>, bindings: InputBindings<A>) {
         self.set_initial_layer(initial_layer);
         self.set_bindings(bindings);
 
@@ -109,17 +109,17 @@ impl Application {
         }
     }
 
-    fn set_initial_layer(&mut self, mut layer: Box<dyn Layer>) {
+    fn set_initial_layer(&mut self, mut layer: Box<dyn Layer<A>>) {
         self.layers.clear();
         layer.on_attach(&mut self.ctx);
         self.layers.push(layer);
     }
 
-    fn set_bindings(&mut self, bindings: InputBindings) {
+    fn set_bindings(&mut self, bindings: InputBindings<A>) {
         self.ctx.settings.bindings = bindings;
     }
 
-    fn handle_layer_command(&mut self, command: LayerCommand) {
+    fn handle_layer_command(&mut self, command: LayerCommand<A>) {
         match command {
             LayerCommand::None => {}
             LayerCommand::Push(mut layer) => {

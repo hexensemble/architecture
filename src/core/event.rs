@@ -1,3 +1,4 @@
+use crate::core::action::*;
 use crate::core::settings::*;
 use raylib::prelude::*;
 
@@ -6,7 +7,7 @@ pub enum Event {
     MousePosition(Vector2),
 }
 
-pub fn collect_events(rl: &RaylibHandle, bindings: &InputBindings) -> Vec<Event> {
+pub fn collect_events<A: ActionType>(rl: &RaylibHandle, bindings: &InputBindings<A>) -> Vec<Event> {
     let mut events = Vec::new();
 
     for key in bindings.key_bindings().keys() {

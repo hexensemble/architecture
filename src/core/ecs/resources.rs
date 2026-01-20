@@ -1,7 +1,7 @@
 use crate::core::action::*;
 use crate::core::time::*;
 
-pub struct EcsResources<'a> {
+pub struct EcsResources<'a, A: ActionType> {
     pub time: &'a Time,
-    pub actions: &'a Actions,
+    pub actions: &'a Actions<A>,
 }

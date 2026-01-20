@@ -1,9 +1,9 @@
+use crate::app::action::*;
 use crate::app::ecs::components::movement::*;
 use crate::app::ecs::systems::movement::*;
 use crate::app::ecs::systems::render::*;
 use crate::app::layers::menu::MenuLayer;
 use crate::app::layers::pause::PauseLayer;
-use crate::core::action::*;
 use crate::core::context::*;
 use crate::core::ecs::resources::*;
 use crate::core::ecs::world::*;
@@ -28,10 +28,14 @@ impl GameLayer {
     }
 }
 
-impl Layer for GameLayer {
-    fn on_event(&mut self, ctx: &mut AppContext, event: &Event) {}
+impl Layer<Action> for GameLayer {
+    fn on_event(&mut self, ctx: &mut AppContext<Action>, event: &Event) {}
 
-    fn on_update(&mut self, ctx: &mut AppContext, rl: &mut RaylibHandle) -> Option<LayerCommand> {
+    fn on_update(
+        &mut self,
+        ctx: &mut AppContext<Action>,
+        rl: &mut RaylibHandle,
+    ) -> Option<LayerCommand<Action>> {
         let resources = EcsResources {
             time: &ctx.time,
             actions: &ctx.actions,
@@ -54,17 +58,17 @@ impl Layer for GameLayer {
         None
     }
 
-    fn on_render(&mut self, ctx: &AppContext, d: &mut RaylibDrawHandle) {
+    fn on_render(&mut self, ctx: &AppContext<Action>, d: &mut RaylibDrawHandle) {
         d.draw_text("This is the game layer!", 12, 12, 20, Color::BLACK);
 
         self.ecs.run_render_system(d, draw_positions);
     }
 
-    fn on_attach(&mut self, ctx: &mut AppContext) {
+    fn on_attach(&mut self, ctx: &mut AppContext<Action>) {
         println!("Attaching game layer...");
     }
 
-    fn on_detach(&mut self, ctx: &mut AppContext) {
+    fn on_detach(&mut self, ctx: &mut AppContext<Action>) {
         println!("Detaching game layer...");
     }
 }
