@@ -1,6 +1,12 @@
+use raylib::prelude::*;
+use serde::Serialize;
+use serde::de::DeserializeOwned;
 use std::fmt::Debug;
 
-pub trait ActionType: Copy + Clone + PartialEq + Debug {}
+pub trait ActionType: Copy + Clone + PartialEq + Debug + Serialize + DeserializeOwned {
+    fn default_key_bindings() -> Vec<(KeyboardKey, Self)>;
+    fn default_pad_bindings() -> Vec<(GamepadButton, Self)>;
+}
 
 pub struct Actions<A: ActionType> {
     actions: Vec<A>,

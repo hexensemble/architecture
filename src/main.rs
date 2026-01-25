@@ -1,18 +1,20 @@
+use crate::core::action::*;
 use crate::core::application::*;
+use crate::core::settings::*;
 use std::fs;
 use std::path::PathBuf;
 
 mod app;
 mod core;
 
-const APP_SPEC_FILENAME: &str = "app-spec.json";
+const SETTINGS: &str = "settings.json";
 
 fn main() {
-    match load_app_spec() {
-        Ok(app_spec) => {
-            let mut app = Application::new(app_spec);
+    match load_settings() {
+        Ok(settings) => {
+            let mut app = Application::new(settings);
 
-            app.run(crate::app::initial_layer(), crate::app::bindings());
+            app.run(crate::app::initial_layer());
         }
         Err(e) => {
             eprintln!("Error! {e}");
@@ -20,36 +22,31 @@ fn main() {
     }
 }
 
-fn load_app_spec() -> Result<ApplicationSpecification, Box<dyn std::error::Error>> {
-    println!("Loading Application Specification...");
+fn load_settings<A: ActionType>() -> Result<Settings<A>, Box<dyn std::error::Error>> {
+    println!("Loading settings...");
 
-    let path = PathBuf::from(APP_SPEC_FILENAME);
+    let path = PathBuf::from(SETTINGS);
 
     if !path.exists() {
-        println!("Unable to locate '{APP_SPEC_FILENAME}', creating defaults...");
+        println!("Unable to locate '{SETTINGS}', creating defaults...");
 
-        let default_spec = ApplicationSpecification {
-            title: "Untitled".to_string(),
-            width: 800,
-            height: 600,
-            fps: 30,
-        };
-        let data = serde_json::to_string_pretty(&default_spec)?;
+        let default_settings = Settings::default();
+        let data = serde_json::to_string_pretty(&default_settings)?;
 
         println!("Done!");
-        println!("Saving {APP_SPEC_FILENAME}...");
+        println!("Saving {SETTINGS}...");
 
         fs::write(&path, data)?;
 
         println!("Success!");
 
-        return Ok(default_spec);
+        return Ok(default_settings);
     }
 
     let data = fs::read_to_string(&path)?;
-    let app_spec: ApplicationSpecification = serde_json::from_str(&data)?;
+    let settings: Settings<A> = serde_json::from_str(&data)?;
 
     println!("Success!");
 
-    Ok(app_spec)
+    Ok(settings)
 }

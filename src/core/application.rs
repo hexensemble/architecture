@@ -1,19 +1,11 @@
 use crate::core::action::*;
+use crate::core::bindings::*;
 use crate::core::context::*;
 use crate::core::event::*;
 use crate::core::layer::*;
 use crate::core::settings::*;
 use crate::core::time::*;
 use raylib::prelude::*;
-use serde::{Deserialize, Serialize};
-
-#[derive(Deserialize, Serialize)]
-pub struct ApplicationSpecification {
-    pub title: String,
-    pub width: i32,
-    pub height: i32,
-    pub fps: u32,
-}
 
 pub struct Application<A: ActionType> {
     rl: RaylibHandle,
@@ -24,19 +16,22 @@ pub struct Application<A: ActionType> {
 }
 
 impl<A: ActionType> Application<A> {
-    pub fn new(spec: ApplicationSpecification) -> Self {
+    pub fn new(settings: Settings<A>) -> Self {
         let (mut rl, thread) = raylib::init()
-            .size(spec.width, spec.height)
-            .title(&spec.title)
+            .size(settings.width, settings.height)
+            .title(&settings.title)
             .build();
 
-        rl.set_target_fps(spec.fps);
+        rl.set_target_fps(settings.fps);
+
+        let bindings = InputBindings::new(&settings.serialized_bindings);
 
         Application {
             rl,
             thread,
             ctx: AppContext {
-                settings: Settings::default(),
+                settings,
+                bindings,
                 actions: Actions::new(),
                 time: Time::new(),
             },
@@ -45,9 +40,8 @@ impl<A: ActionType> Application<A> {
         }
     }
 
-    pub fn run(&mut self, initial_layer: Box<dyn Layer<A>>, bindings: InputBindings<A>) {
+    pub fn run(&mut self, initial_layer: Box<dyn Layer<A>>) {
         self.set_initial_layer(initial_layer);
-        self.set_bindings(bindings);
 
         if self.layers.is_empty() {
             eprintln!("Error: No initial layer set!");
@@ -69,7 +63,7 @@ impl<A: ActionType> Application<A> {
             }
 
             // Events
-            let events = collect_events(&self.rl, &self.ctx.settings.bindings);
+            let events = collect_events(&self.rl, &self.ctx.bindings);
             for event in &events {
                 // Send event to current top layer - For events that need immediate processing before the update phase.
                 if let Some(top_layer) = self.layers.last_mut() {
@@ -79,7 +73,7 @@ impl<A: ActionType> Application<A> {
                 // Send event to actions list - For actions handled later during update.
                 match event {
                     Event::KeyPressed(key) => {
-                        if let Some(action) = self.ctx.settings.bindings.key_bindings().get(key) {
+                        if let Some(action) = self.ctx.bindings.key_bindings().get(key) {
                             self.ctx.actions.push(*action);
                             println!("{:?}", action);
                         }
@@ -113,10 +107,6 @@ impl<A: ActionType> Application<A> {
         self.layers.clear();
         layer.on_attach(&mut self.ctx);
         self.layers.push(layer);
-    }
-
-    fn set_bindings(&mut self, bindings: InputBindings<A>) {
-        self.ctx.settings.bindings = bindings;
     }
 
     fn handle_layer_command(&mut self, command: LayerCommand<A>) {

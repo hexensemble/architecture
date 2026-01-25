@@ -1,5 +1,5 @@
 use crate::core::action::*;
-use crate::core::settings::*;
+use crate::core::bindings::*;
 use raylib::prelude::*;
 
 pub enum Event {
