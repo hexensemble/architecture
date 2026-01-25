@@ -20,6 +20,16 @@ impl ActionType for Action {
     }
 
     fn default_pad_bindings() -> Vec<(GamepadButton, Self)> {
-        Vec::new()
+        vec![
+            (
+                GamepadButton::GAMEPAD_BUTTON_RIGHT_FACE_DOWN,
+                Action::Confirm,
+            ),
+            (
+                GamepadButton::GAMEPAD_BUTTON_RIGHT_FACE_RIGHT,
+                Action::Pause,
+            ),
+            (GamepadButton::GAMEPAD_BUTTON_RIGHT_FACE_LEFT, Action::Quit),
+        ]
     }
 }

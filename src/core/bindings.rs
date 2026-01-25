@@ -19,7 +19,10 @@ impl<A: ActionType> InputBindings<A> {
             keys.insert(serialized_key.0, action);
         }
 
-        let pads: HashMap<GamepadButton, A> = HashMap::new();
+        let mut pads: HashMap<GamepadButton, A> = HashMap::new();
+        for (serialized_pad, action) in serialized_bindings.pad_bindings.clone() {
+            pads.insert(serialized_pad.0, action);
+        }
 
         Self {
             key_bindings: keys,
@@ -40,17 +43,25 @@ impl<A: ActionType> InputBindings<A> {
 #[serde(bound(deserialize = "A: DeserializeOwned"))]
 pub struct SerializedBindings<A: ActionType> {
     pub key_bindings: HashMap<SerializeableKey, A>,
+    pub pad_bindings: HashMap<SerializeablePad, A>,
 }
 
 impl<A: ActionType> SerializedBindings<A> {
     pub fn default() -> Self {
         let mut keys = HashMap::new();
-
         for (key, action) in A::default_key_bindings() {
             keys.insert(SerializeableKey(key), action);
         }
 
-        Self { key_bindings: keys }
+        let mut pads = HashMap::new();
+        for (pad, action) in A::default_pad_bindings() {
+            pads.insert(SerializeablePad(pad), action);
+        }
+
+        Self {
+            key_bindings: keys,
+            pad_bindings: pads,
+        }
     }
 }
 
@@ -220,5 +231,74 @@ impl<'de> Deserialize<'de> for SerializeableKey {
         let s = String::deserialize(deserializer)?;
 
         SerializeableKey::from_str(&s).map_err(serde::de::Error::custom)
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub struct SerializeablePad(pub GamepadButton);
+
+impl Display for SerializeablePad {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self.0)
+    }
+}
+
+impl FromStr for SerializeablePad {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let pad = match s {
+            // Face buttons
+            "GAMEPAD_BUTTON_RIGHT_FACE_UP" => GamepadButton::GAMEPAD_BUTTON_RIGHT_FACE_UP, // Y/Triangle
+            "GAMEPAD_BUTTON_RIGHT_FACE_RIGHT" => GamepadButton::GAMEPAD_BUTTON_RIGHT_FACE_RIGHT, // B/Circle
+            "GAMEPAD_BUTTON_RIGHT_FACE_DOWN" => GamepadButton::GAMEPAD_BUTTON_RIGHT_FACE_DOWN, // A/Cross
+            "GAMEPAD_BUTTON_RIGHT_FACE_LEFT" => GamepadButton::GAMEPAD_BUTTON_RIGHT_FACE_LEFT, // X/Square
+
+            // D-pad
+            "GAMEPAD_BUTTON_LEFT_FACE_UP" => GamepadButton::GAMEPAD_BUTTON_LEFT_FACE_UP,
+            "GAMEPAD_BUTTON_LEFT_FACE_RIGHT" => GamepadButton::GAMEPAD_BUTTON_LEFT_FACE_RIGHT,
+            "GAMEPAD_BUTTON_LEFT_FACE_DOWN" => GamepadButton::GAMEPAD_BUTTON_LEFT_FACE_DOWN,
+            "GAMEPAD_BUTTON_LEFT_FACE_LEFT" => GamepadButton::GAMEPAD_BUTTON_LEFT_FACE_LEFT,
+
+            // Triggers/bumpers
+            "GAMEPAD_BUTTON_LEFT_TRIGGER_1" => GamepadButton::GAMEPAD_BUTTON_LEFT_TRIGGER_1, // LB
+            "GAMEPAD_BUTTON_LEFT_TRIGGER_2" => GamepadButton::GAMEPAD_BUTTON_LEFT_TRIGGER_2, // LT
+            "GAMEPAD_BUTTON_RIGHT_TRIGGER_1" => GamepadButton::GAMEPAD_BUTTON_RIGHT_TRIGGER_1, // RB
+            "GAMEPAD_BUTTON_RIGHT_TRIGGER_2" => GamepadButton::GAMEPAD_BUTTON_RIGHT_TRIGGER_2, // RT
+
+            // Thumbstick buttons
+            "GAMEPAD_BUTTON_LEFT_THUMB" => GamepadButton::GAMEPAD_BUTTON_LEFT_THUMB, // L3
+            "GAMEPAD_BUTTON_RIGHT_THUMB" => GamepadButton::GAMEPAD_BUTTON_RIGHT_THUMB, // R3
+
+            // Center buttons
+            "GAMEPAD_BUTTON_MIDDLE_LEFT" => GamepadButton::GAMEPAD_BUTTON_MIDDLE_LEFT, // Select/Back
+            "GAMEPAD_BUTTON_MIDDLE" => GamepadButton::GAMEPAD_BUTTON_MIDDLE,           // Guide/Home
+            "GAMEPAD_BUTTON_MIDDLE_RIGHT" => GamepadButton::GAMEPAD_BUTTON_MIDDLE_RIGHT, // Start
+
+            // Unknown
+            _ => return Err(format!("Unknown key: {}", s)),
+        };
+
+        Ok(SerializeablePad(pad))
+    }
+}
+
+impl Serialize for SerializeablePad {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
+    }
+}
+
+impl<'de> Deserialize<'de> for SerializeablePad {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+
+        SerializeablePad::from_str(&s).map_err(serde::de::Error::custom)
     }
 }

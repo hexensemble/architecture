@@ -78,6 +78,12 @@ impl<A: ActionType> Application<A> {
                             println!("{:?}", action);
                         }
                     }
+                    Event::PadPressed(pad) => {
+                        if let Some(action) = self.ctx.bindings.pad_bindings().get(pad) {
+                            self.ctx.actions.push(*action);
+                            println!("{:?}", action);
+                        }
+                    }
                     Event::MousePosition(_) => {}
                 }
             }
