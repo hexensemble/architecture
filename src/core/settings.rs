@@ -13,8 +13,8 @@ pub struct Settings<A: ActionType> {
     pub serialized_bindings: SerializedBindings<A>,
 }
 
-impl<A: ActionType> Settings<A> {
-    pub fn default() -> Self {
+impl<A: ActionType> Default for Settings<A> {
+    fn default() -> Self {
         Self {
             title: "Untitled".to_string(),
             width: 800,

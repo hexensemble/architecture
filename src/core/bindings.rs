@@ -46,8 +46,8 @@ pub struct SerializedBindings<A: ActionType> {
     pub pad_bindings: HashMap<SerializeablePad, A>,
 }
 
-impl<A: ActionType> SerializedBindings<A> {
-    pub fn default() -> Self {
+impl<A: ActionType> Default for SerializedBindings<A> {
+    fn default() -> Self {
         let mut keys = HashMap::new();
         for (key, action) in A::default_key_bindings() {
             keys.insert(SerializeableKey(key), action);
