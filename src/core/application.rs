@@ -40,12 +40,14 @@ impl<A: ActionType> Application<A> {
         }
     }
 
-    pub fn run(&mut self, initial_layer: Box<dyn Layer<A>>) {
+    pub fn run(
+        &mut self,
+        initial_layer: Box<dyn Layer<A>>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         self.set_initial_layer(initial_layer);
 
         if self.layers.is_empty() {
-            eprintln!("Error: No initial layer set!");
-            panic!();
+            return Err("No initial layer set.".into());
         }
 
         while self.running {
@@ -107,6 +109,8 @@ impl<A: ActionType> Application<A> {
                 layer.on_render(&self.ctx, &mut d);
             }
         }
+
+        Ok(())
     }
 
     fn set_initial_layer(&mut self, mut layer: Box<dyn Layer<A>>) {

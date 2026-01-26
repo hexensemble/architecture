@@ -3,6 +3,7 @@ use crate::core::application::*;
 use crate::core::settings::*;
 use std::fs;
 use std::path::PathBuf;
+use std::process;
 
 mod app;
 mod core;
@@ -14,10 +15,17 @@ fn main() {
         Ok(settings) => {
             let mut app = Application::new(settings);
 
-            app.run(crate::app::initial_layer());
+            match app.run(crate::app::initial_layer()) {
+                Ok(()) => process::exit(0),
+                Err(e) => {
+                    eprintln!("Error! {e}");
+                    process::exit(1)
+                }
+            }
         }
         Err(e) => {
             eprintln!("Error! {e}");
+            process::exit(1);
         }
     }
 }
