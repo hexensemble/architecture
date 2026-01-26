@@ -15,13 +15,13 @@ pub struct InputBindings<A: ActionType> {
 impl<A: ActionType> InputBindings<A> {
     pub fn new(serialized_bindings: &SerializedBindings<A>) -> Self {
         let mut keys: HashMap<KeyboardKey, A> = HashMap::new();
-        for (serialized_key, action) in serialized_bindings.key_bindings.clone() {
-            keys.insert(serialized_key.0, action);
+        for (serialized_key, action) in &serialized_bindings.key_bindings {
+            keys.insert(serialized_key.0, *action);
         }
 
         let mut pads: HashMap<GamepadButton, A> = HashMap::new();
-        for (serialized_pad, action) in serialized_bindings.pad_bindings.clone() {
-            pads.insert(serialized_pad.0, action);
+        for (serialized_pad, action) in &serialized_bindings.pad_bindings {
+            pads.insert(serialized_pad.0, *action);
         }
 
         Self {
