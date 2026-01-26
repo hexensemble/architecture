@@ -4,7 +4,7 @@ use raylib::prelude::*;
 
 pub enum Event {
     KeyPressed(KeyboardKey),
-    PadPressed(GamepadButton),
+    PadPressed(i32, GamepadButton),
     MousePosition(Vector2),
 }
 
@@ -17,9 +17,13 @@ pub fn collect_events<A: ActionType>(rl: &RaylibHandle, bindings: &InputBindings
         }
     }
 
-    for pad in bindings.pad_bindings().keys() {
-        if rl.is_gamepad_button_pressed(0, *pad) {
-            events.push(Event::PadPressed(*pad));
+    for gamepad_id in 0..4 {
+        if rl.is_gamepad_available(gamepad_id) {
+            for pad in bindings.pad_bindings().keys() {
+                if rl.is_gamepad_button_pressed(gamepad_id, *pad) {
+                    events.push(Event::PadPressed(gamepad_id, *pad));
+                }
+            }
         }
     }
 

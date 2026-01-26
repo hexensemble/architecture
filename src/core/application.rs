@@ -80,7 +80,7 @@ impl<A: ActionType> Application<A> {
                             println!("{:?}", action);
                         }
                     }
-                    Event::PadPressed(pad) => {
+                    Event::PadPressed(_gamepad_id, pad) => {
                         if let Some(action) = self.ctx.bindings.pad_bindings().get(pad) {
                             self.ctx.actions.push(*action);
                             println!("{:?}", action);
