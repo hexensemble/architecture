@@ -64,11 +64,11 @@ impl<T: ServerEndpoint> Server<T> {
         let dt = self.fixed_dt();
         movement(self.server_world.world(), dt);
 
-        let entity_position_data = get_entity_position_data(self.server_world.world());
-        let mut entity_positions: Vec<EntityPosition> = Vec::new();
-        for (id, x, y) in entity_position_data {
-            entity_positions.push(EntityPosition { id, x, y });
-        }
+        let entity_positions: Vec<EntityPosition> =
+            get_entity_position_data(self.server_world.world())
+                .into_iter()
+                .map(|(id, x, y)| EntityPosition { id, x, y })
+                .collect();
 
         let snapshot = ServerWorldSnapshot::new(self.tick, entity_positions);
 
