@@ -16,7 +16,7 @@ impl Layer<Action> for MenuLayer {
         rl: &mut RaylibHandle,
     ) -> Option<LayerCommand<Action>> {
         if ctx.actions.take(Action::Confirm) {
-            return Some(LayerCommand::Replace(Box::new(GameLayer::new())));
+            return Some(LayerCommand::Replace(Box::new(GameLayer::default())));
         }
 
         if ctx.actions.take(Action::Quit) {

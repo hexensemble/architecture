@@ -7,7 +7,8 @@ use std::process;
 
 mod app;
 mod core;
-mod server;
+mod game;
+mod net;
 
 const SETTINGS: &str = "settings.json";
 

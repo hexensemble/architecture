@@ -1,30 +1,28 @@
 use crate::app::action::*;
-use crate::app::ecs::components::movement::*;
-use crate::app::ecs::systems::movement::*;
-use crate::app::ecs::systems::render::*;
 use crate::app::layers::menu::MenuLayer;
 use crate::app::layers::pause::PauseLayer;
 use crate::core::context::*;
-use crate::core::ecs::resources::*;
-use crate::core::ecs::world::*;
 use crate::core::event::*;
 use crate::core::layer::*;
+use crate::net::client::*;
+use crate::net::protocol::message::*;
+use crate::net::server::*;
+use crate::net::transport::endpoint::*;
+use crate::net::transport::loopback::*;
 use raylib::prelude::*;
 
 pub struct GameLayer {
-    ecs: EcsWorld,
+    client: Client<LoopBackClientEndpoint>,
+    server: Server<LoopBackServerEndpoint>,
 }
 
-impl GameLayer {
-    pub fn new() -> Self {
-        let mut ecs = EcsWorld::new();
+impl Default for GameLayer {
+    fn default() -> Self {
+        let (client_endpoint, server_endpoint) = loopback();
+        let client = Client::new(client_endpoint);
+        let server = Server::new(server_endpoint);
 
-        ecs.world_mut().spawn((
-            Position { x: 100.0, y: 100.0 },
-            Velocity { x: 10.0, y: 10.0 },
-        ));
-
-        Self { ecs }
+        Self { client, server }
     }
 }
 
@@ -36,13 +34,16 @@ impl Layer<Action> for GameLayer {
         ctx: &mut AppContext<Action>,
         rl: &mut RaylibHandle,
     ) -> Option<LayerCommand<Action>> {
-        let resources = EcsResources {
-            time: &ctx.time,
-            actions: &ctx.actions,
-        };
+        //Client/Server stuff
+        self.client.add_time(ctx.time.delta());
+        while self.client.get_accumulator() >= self.server.fixed_dt() {
+            self.server.tick();
+            self.client.subtract_time(self.server.fixed_dt());
+        }
 
-        self.ecs.run_system(&resources, movement);
+        self.client.get_server_messages();
 
+        // Layer stuff
         if ctx.actions.take(Action::Confirm) {
             return Some(LayerCommand::Replace(Box::new(MenuLayer)));
         }
@@ -61,14 +62,40 @@ impl Layer<Action> for GameLayer {
     fn on_render(&mut self, ctx: &AppContext<Action>, d: &mut RaylibDrawHandle) {
         d.draw_text("This is the game layer!", 12, 12, 20, Color::BLACK);
 
-        self.ecs.run_render_system(d, draw_positions);
+        if let Some(snapshot) = &self.client.server_world_snapshot() {
+            d.draw_text(
+                &format!("Server tick: {}", snapshot.snapshot_tick()),
+                12,
+                40,
+                20,
+                Color::BLACK,
+            );
+
+            for entity in snapshot.entity_positions() {
+                d.draw_circle(entity.x as i32, entity.y as i32, 10.0, Color::BLUE);
+            }
+        } else {
+            d.draw_text("Waiting for snapshot...", 12, 60, 20, Color::DARKGRAY);
+        }
     }
 
     fn on_attach(&mut self, ctx: &mut AppContext<Action>) {
         println!("Attaching game layer...");
+
+        self.client
+            .mut_endpoint()
+            .send(ClientMessage::Connect)
+            .unwrap();
     }
 
     fn on_detach(&mut self, ctx: &mut AppContext<Action>) {
         println!("Detaching game layer...");
+
+        self.client
+            .mut_endpoint()
+            .send(ClientMessage::Disconnect)
+            .unwrap();
+
+        self.server.tick();
     }
 }

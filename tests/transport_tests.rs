@@ -1,7 +1,7 @@
-use architecture::core::protocol::message::{ClientMessage, ServerMessage};
-use architecture::core::protocol::snapshot::WorldSnapshot;
-use architecture::core::transport::endpoint::{ClientEndpoint, ServerEndpoint};
-use architecture::core::transport::loopback::loopback;
+use architecture::net::protocol::message::{ClientMessage, ServerMessage};
+use architecture::net::protocol::snapshot::ServerWorldSnapshot;
+use architecture::net::transport::endpoint::{ClientEndpoint, ServerEndpoint};
+use architecture::net::transport::loopback::loopback;
 
 #[test]
 fn client_to_server() {
@@ -71,14 +71,14 @@ fn multiple_messages_preserve_order() {
 fn snapshot_round_trip() {
     let (mut client_endpoint, mut server_endpoint) = loopback();
 
-    let snapshot = WorldSnapshot { tick: 666 };
+    let snapshot = ServerWorldSnapshot::default();
 
     server_endpoint
         .send(ServerMessage::Snapshot(snapshot))
         .unwrap();
 
     match client_endpoint.recv() {
-        Some(ServerMessage::Snapshot(snap)) => assert_eq!(snap.tick, 666),
+        Some(ServerMessage::Snapshot(snap)) => assert_eq!(snap.snapshot_tick(), 666),
         _ => panic!("Expected snapshot!"),
     }
 }

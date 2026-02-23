@@ -1,13 +1,12 @@
-use crate::core::protocol::message::*;
-use crate::core::transport::endpoint::*;
-use crate::core::transport::error::*;
+use crate::net::protocol::message::*;
+use crate::net::transport::endpoint::*;
+use crate::net::transport::error::*;
 use std::cell::RefCell;
 use std::collections::VecDeque;
 use std::rc::Rc;
 
 type MessageQueue<T> = Rc<RefCell<VecDeque<T>>>;
 
-/// Creates a connected loopback pair (client endpoint, server endpoint)
 pub fn loopback() -> (LoopBackClientEndpoint, LoopBackServerEndpoint) {
     let client_to_server_queue: MessageQueue<ClientMessage> =
         Rc::new(RefCell::new(VecDeque::new()));
@@ -28,7 +27,6 @@ pub fn loopback() -> (LoopBackClientEndpoint, LoopBackServerEndpoint) {
     (client_endpoint, server_endpoint)
 }
 
-/// Client-side loopback endpoint
 pub struct LoopBackClientEndpoint {
     outgoing: MessageQueue<ClientMessage>,
     incoming: MessageQueue<ServerMessage>,
@@ -45,7 +43,6 @@ impl ClientEndpoint for LoopBackClientEndpoint {
     }
 }
 
-/// Server-side loopback endpoint
 pub struct LoopBackServerEndpoint {
     outgoing: MessageQueue<ServerMessage>,
     incoming: MessageQueue<ClientMessage>,

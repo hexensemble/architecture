@@ -1,7 +1,6 @@
 use std::fmt;
 use std::fmt::Display;
 
-/// Error type for transport operations
 #[derive(Clone, Debug)]
 pub enum TransportError {
     Disconnected,
