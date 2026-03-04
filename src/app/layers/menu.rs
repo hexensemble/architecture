@@ -3,6 +3,7 @@ use crate::app::layers::game::GameLayer;
 use crate::core::context::*;
 use crate::core::event::*;
 use crate::core::layer::*;
+use crate::net::session::*;
 use raylib::prelude::*;
 
 pub struct MenuLayer;
@@ -16,7 +17,9 @@ impl Layer<Action> for MenuLayer {
         rl: &mut RaylibHandle,
     ) -> Option<LayerCommand<Action>> {
         if ctx.actions.take(Action::Confirm) {
-            return Some(LayerCommand::Replace(Box::new(GameLayer::default())));
+            return Some(LayerCommand::Replace(Box::new(GameLayer::new(
+                make_session(&ctx.settings.net_settings),
+            ))));
         }
 
         if ctx.actions.take(Action::Quit) {

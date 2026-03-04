@@ -27,7 +27,7 @@ impl<T: ServerEndpoint> Server<T> {
         }
     }
 
-    pub fn tick(&mut self) {
+    pub fn poll_messages(&mut self) {
         while let Some(msg) = self.endpoint.recv() {
             match msg {
                 ClientMessage::Connect => {
@@ -54,7 +54,9 @@ impl<T: ServerEndpoint> Server<T> {
                 }
             }
         }
+    }
 
+    pub fn step(&mut self) {
         if !self.client_connected {
             return;
         }
@@ -73,6 +75,11 @@ impl<T: ServerEndpoint> Server<T> {
         let snapshot = ServerWorldSnapshot::new(self.tick, entity_positions);
 
         let _ = self.endpoint.send(ServerMessage::Snapshot(snapshot));
+    }
+
+    pub fn tick(&mut self) {
+        self.poll_messages();
+        self.step();
     }
 
     pub fn fixed_dt(&self) -> f32 {

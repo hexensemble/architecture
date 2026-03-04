@@ -11,6 +11,7 @@ pub struct Settings<A: ActionType> {
     pub height: i32,
     pub fps: u32,
     pub serialized_bindings: SerializedBindings<A>,
+    pub net_settings: NetSettings,
 }
 
 impl<A: ActionType> Default for Settings<A> {
@@ -21,6 +22,28 @@ impl<A: ActionType> Default for Settings<A> {
             height: 600,
             fps: 30,
             serialized_bindings: SerializedBindings::default(),
+            net_settings: NetSettings::default(),
         }
     }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct NetSettings {
+    pub mode: NetMode,
+    pub server_addr: String,
+}
+
+impl Default for NetSettings {
+    fn default() -> Self {
+        Self {
+            mode: NetMode::Local,
+            server_addr: "127.0.0.1:27960".to_string(),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub enum NetMode {
+    Local,
+    Remote,
 }
