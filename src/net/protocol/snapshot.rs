@@ -1,4 +1,6 @@
-#[derive(Clone, Debug)]
+use bitcode::{Decode, Encode};
+
+#[derive(Clone, Debug, Encode, Decode)]
 pub struct ServerWorldSnapshot {
     tick: u64,
     entity_positions: Vec<EntityPosition>,
@@ -30,7 +32,7 @@ impl ServerWorldSnapshot {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Debug, Encode, Decode)]
 pub struct EntityPosition {
     pub id: u32,
     pub x: f32,

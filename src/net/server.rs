@@ -77,6 +77,7 @@ impl<T: ServerEndpoint> Server<T> {
         let _ = self.endpoint.send(ServerMessage::Snapshot(snapshot));
     }
 
+    // Tests
     pub fn tick(&mut self) {
         self.poll_messages();
         self.step();
@@ -86,10 +87,12 @@ impl<T: ServerEndpoint> Server<T> {
         self.fixed_dt
     }
 
+    // Tests
     pub fn current_tick(&self) -> u64 {
         self.tick
     }
 
+    // Tests
     pub fn client_connected(&self) -> bool {
         self.client_connected
     }

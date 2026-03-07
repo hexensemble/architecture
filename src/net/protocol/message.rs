@@ -1,12 +1,13 @@
 use crate::net::protocol::snapshot::*;
+use bitcode::{Decode, Encode};
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug, Decode, Encode)]
 pub enum ClientMessage {
     Connect,
     Disconnect,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug, Decode, Encode)]
 pub enum ServerMessage {
     Connected { client_id: u32 },
     Disconnected,
