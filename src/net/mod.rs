@@ -1,7 +1,5 @@
-pub mod client;
+pub mod config;
 pub mod protocol;
-pub mod renet_config;
-pub mod server;
+pub mod server_sim;
 pub mod session;
 pub mod stepper;
-pub mod transport;

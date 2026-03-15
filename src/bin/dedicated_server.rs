@@ -1,9 +1,6 @@
-use architecture::game::ecs::systems::movement::*;
-use architecture::game::ecs::systems::snapshot::*;
-use architecture::game::world::ServerWorld;
+use architecture::net::config::*;
 use architecture::net::protocol::message::ServerMessage;
-use architecture::net::protocol::snapshot::*;
-use architecture::net::renet_config::PROTOCOL_ID;
+use architecture::net::server_sim::ServerSim;
 use bitcode::encode;
 use renet::{ConnectionConfig, DefaultChannel, RenetServer, ServerEvent};
 use renet_netcode::{NetcodeServerTransport, ServerAuthentication, ServerConfig};
@@ -12,76 +9,71 @@ use std::net::UdpSocket;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let current_time = SystemTime::now().duration_since(UNIX_EPOCH)?;
+
+    //TODO: Needs to be command line argument
     let addr = env::args()
         .nth(1)
         .unwrap_or_else(|| "127.0.0.1:27960".to_string());
 
-    let server_addr = addr.parse()?;
-
-    let socket = UdpSocket::bind(server_addr)?;
-    socket.set_nonblocking(true)?;
-
-    let current_time = SystemTime::now().duration_since(UNIX_EPOCH)?;
+    // Create server
 
     let mut server = RenetServer::new(ConnectionConfig::default());
 
+    let server_socket = UdpSocket::bind(addr)?;
+    server_socket.set_nonblocking(true)?;
+
+    let server_addr = server_socket.local_addr()?;
+
     let server_config = ServerConfig {
         current_time,
-        max_clients: 64,
+        max_clients: MAX_CLIENTS,
         protocol_id: PROTOCOL_ID,
         public_addresses: vec![server_addr],
         authentication: ServerAuthentication::Unsecure,
     };
 
-    let mut transport = NetcodeServerTransport::new(server_config, socket)?;
+    let mut server_transport = NetcodeServerTransport::new(server_config, server_socket)?;
 
-    let mut server_world = ServerWorld::default();
-    let mut tick: u64 = 0;
+    // Start server
 
-    server_world.reset();
-    server_world.spawn_demo_entity(100.0, 100.0, 10.0, 10.0);
-    server_world.spawn_demo_entity(500.0, 500.0, -10.0, -10.0);
+    let mut sim = ServerSim::default();
+    sim.reset();
 
-    let dt = Duration::from_secs_f32(1.0 / 60.0);
+    let fixed_dt = sim.fixed_dt();
 
     println!("[Dedicated Server] Listening on: {}.", server_addr);
 
     loop {
+        let dt = Duration::from_secs_f32(fixed_dt);
+
         server.update(dt);
-        transport.update(dt, &mut server)?;
+
+        server_transport.update(dt, &mut server)?;
 
         while let Some(event) = server.get_event() {
             match event {
                 ServerEvent::ClientConnected { client_id } => {
-                    println!("[Dedicated Server] Client connected: {}.", client_id);
+                    println!("[Dedicated Server] Client connected: {}", client_id);
                 }
                 ServerEvent::ClientDisconnected { client_id, reason } => {
                     println!(
-                        "[Dedicated Server] Client disconnected: {}. Reason: {}.",
+                        "[Dedicated Server] Client disconnected: {}, {}",
                         client_id, reason
                     );
                 }
             }
         }
 
-        tick += 1;
-
-        movement(server_world.world(), dt.as_secs_f32());
-
-        let entity_positions: Vec<EntityPosition> = get_entity_position_data(server_world.world())
-            .into_iter()
-            .map(|(id, x, y)| EntityPosition { id, x, y })
-            .collect();
+        let snapshot = sim.step();
 
         let any_clients = server.clients_id_iter().next().is_some();
         if any_clients {
-            let snapshot = ServerWorldSnapshot::new(tick, entity_positions);
             let msg = ServerMessage::Snapshot(snapshot);
-
             server.broadcast_message(DefaultChannel::Unreliable, encode(&msg));
         }
 
-        transport.send_packets(&mut server);
+        server_transport.send_packets(&mut server);
 
         std::thread::sleep(dt);
     }

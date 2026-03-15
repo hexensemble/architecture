@@ -1,2 +1,2 @@
 pub mod ecs;
-pub mod world;
+pub mod server_world;

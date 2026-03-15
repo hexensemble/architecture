@@ -1,5 +1,5 @@
 use crate::game::ecs::components::movement::*;
-use crate::game::world::*;
+use crate::game::server_world::*;
 use hecs::World;
 
 pub fn get_entity_position_data(world: &World) -> Vec<(u32, f32, f32)> {
