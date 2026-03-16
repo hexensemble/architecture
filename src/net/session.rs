@@ -36,7 +36,7 @@ pub struct LocalSession {
 
     stepper: FixedStepper,
     sim: ServerSim,
-    lastest_snapshot: Option<ServerWorldSnapshot>,
+    latest_snapshot: Option<ServerWorldSnapshot>,
 }
 
 impl Default for LocalSession {
@@ -48,7 +48,7 @@ impl Default for LocalSession {
             client_transport: None,
             stepper: FixedStepper::new(MAX_STEPS_PER_FRAME),
             sim: ServerSim::default(),
-            lastest_snapshot: None,
+            latest_snapshot: None,
         }
     }
 }
@@ -118,28 +118,15 @@ impl GameSession for LocalSession {
         self.client = Some(client);
         self.client_transport = Some(client_transport);
 
-        self.lastest_snapshot = None;
+        self.latest_snapshot = None;
     }
 
     fn disconnect(&mut self) {
-        if let Some(client) = self.client.as_mut() {
-            client.disconnect();
-        }
-
-        // Flush packets
-        if let (Some(client), Some(client_transport)) =
-            (self.client.as_mut(), self.client_transport.as_mut())
-        {
-            let _ = client_transport.send_packets(client);
-        }
-
-        self.server = None;
-        self.server_transport = None;
-
-        self.client = None;
-        self.client_transport = None;
-
-        self.lastest_snapshot = None;
+        disconnect_client(
+            &mut self.client,
+            &mut self.client_transport,
+            &mut self.latest_snapshot,
+        );
     }
 
     fn update(&mut self, frame_dt: f32) {
@@ -206,7 +193,7 @@ impl GameSession for LocalSession {
 
             while let Some(bytes) = client.receive_message(DefaultChannel::Unreliable) {
                 if let Ok(ServerMessage::Snapshot(snapshot)) = decode(bytes.as_ref()) {
-                    self.lastest_snapshot = Some(snapshot);
+                    self.latest_snapshot = Some(snapshot);
                 }
             }
 
@@ -221,7 +208,7 @@ impl GameSession for LocalSession {
     }
 
     fn latest_snapshot(&self) -> Option<&ServerWorldSnapshot> {
-        self.lastest_snapshot.as_ref()
+        self.latest_snapshot.as_ref()
     }
 }
 
@@ -289,21 +276,11 @@ impl GameSession for RemoteSession {
     }
 
     fn disconnect(&mut self) {
-        if let Some(client) = self.client.as_mut() {
-            client.disconnect();
-        }
-
-        // Flush packets
-        if let (Some(client), Some(client_transport)) =
-            (self.client.as_mut(), self.client_transport.as_mut())
-        {
-            let _ = client_transport.send_packets(client);
-        }
-
-        self.client = None;
-        self.client_transport = None;
-
-        self.latest_snapshot = None;
+        disconnect_client(
+            &mut self.client,
+            &mut self.client_transport,
+            &mut self.latest_snapshot,
+        );
     }
 
     fn update(&mut self, frame_dt: f32) {
@@ -337,4 +314,22 @@ impl GameSession for RemoteSession {
     fn latest_snapshot(&self) -> Option<&ServerWorldSnapshot> {
         self.latest_snapshot.as_ref()
     }
+}
+
+fn disconnect_client(
+    client: &mut Option<RenetClient>,
+    client_transport: &mut Option<NetcodeClientTransport>,
+    latest_snapshot: &mut Option<ServerWorldSnapshot>,
+) {
+    if let (Some(c), Some(ct)) = (client.as_mut(), client_transport.as_mut()) {
+        c.disconnect();
+
+        // Flush packets
+        let _ = ct.send_packets(c);
+    }
+
+    *client = None;
+    *client_transport = None;
+
+    *latest_snapshot = None;
 }
