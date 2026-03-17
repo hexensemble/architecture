@@ -1,6 +1,7 @@
 use architecture::net::config::*;
 use architecture::net::protocol::message::ServerMessage;
 use architecture::net::server_sim::ServerSim;
+use architecture::net::stepper::*;
 use bitcode::encode;
 use renet::{ConnectionConfig, DefaultChannel, RenetServer, ServerEvent};
 use renet_netcode::{NetcodeServerTransport, ServerAuthentication, ServerConfig};
@@ -41,40 +42,44 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     sim.reset();
 
     let fixed_dt = sim.fixed_dt();
+    let mut server_stepper = ServerStepper::new(fixed_dt, MAX_STEPS_PER_FRAME);
 
     println!("[Dedicated Server] Listening on: {}.", server_addr);
 
     loop {
-        let dt = Duration::from_secs_f32(fixed_dt);
+        server_stepper.wait_and_run(|| {
+            let dt = Duration::from_secs_f32(fixed_dt);
 
-        server.update(dt);
+            server.update(dt);
 
-        server_transport.update(dt, &mut server)?;
+            if let Err(e) = server_transport.update(dt, &mut server) {
+                eprintln!("[Dedicated Server] Server transport update error: {}", e);
+                return;
+            };
 
-        while let Some(event) = server.get_event() {
-            match event {
-                ServerEvent::ClientConnected { client_id } => {
-                    println!("[Dedicated Server] Client connected: {}", client_id);
-                }
-                ServerEvent::ClientDisconnected { client_id, reason } => {
-                    println!(
-                        "[Dedicated Server] Client disconnected: {}, {}",
-                        client_id, reason
-                    );
+            while let Some(event) = server.get_event() {
+                match event {
+                    ServerEvent::ClientConnected { client_id } => {
+                        println!("[Dedicated Server] Client connected: {}", client_id);
+                    }
+                    ServerEvent::ClientDisconnected { client_id, reason } => {
+                        println!(
+                            "[Dedicated Server] Client disconnected: {}, {}",
+                            client_id, reason
+                        );
+                    }
                 }
             }
-        }
 
-        let snapshot = sim.step();
+            let snapshot = sim.step();
 
-        let any_clients = server.clients_id_iter().next().is_some();
-        if any_clients {
-            let msg = ServerMessage::Snapshot(snapshot);
-            server.broadcast_message(DefaultChannel::Unreliable, encode(&msg));
-        }
+            let any_clients = server.clients_id_iter().next().is_some();
+            if any_clients {
+                let msg = ServerMessage::Snapshot(snapshot);
+                server.broadcast_message(DefaultChannel::Unreliable, encode(&msg));
+            }
 
-        server_transport.send_packets(&mut server);
-
-        std::thread::sleep(dt);
+            server_transport.send_packets(&mut server);
+        });
     }
 }
