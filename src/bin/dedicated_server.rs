@@ -41,10 +41,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut sim = ServerSim::default();
     sim.reset();
 
+    println!("[Dedicated Server] Listening on: {}", server_addr);
+
     let fixed_dt = sim.fixed_dt();
     let mut server_stepper = ServerStepper::new(fixed_dt, MAX_STEPS_PER_FRAME);
 
-    println!("[Dedicated Server] Listening on: {}.", server_addr);
+    // Update server
 
     loop {
         server_stepper.wait_and_run(|| {
