@@ -1,12 +1,14 @@
 use architecture::net::config::*;
-use architecture::net::protocol::message::ServerMessage;
-use architecture::net::server_sim::ServerSim;
+use architecture::net::protocol::message::*;
+use architecture::net::server_sim::*;
 use architecture::net::stepper::*;
 use bitcode::encode;
 use renet::{ConnectionConfig, DefaultChannel, RenetServer, ServerEvent};
 use renet_netcode::{NetcodeServerTransport, ServerAuthentication, ServerConfig};
 use std::env;
 use std::net::UdpSocket;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -36,6 +38,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut server_transport = NetcodeServerTransport::new(server_config, server_socket)?;
 
+    // Create server shutdown handler
+
+    let running = Arc::new(AtomicBool::new(true));
+    let running_clone = running.clone();
+
+    ctrlc::set_handler(move || {
+        println!("[Dedicated Server] Shutting down...");
+        running_clone.store(false, Ordering::SeqCst);
+    })?;
+
     // Start server
 
     let mut sim = ServerSim::default();
@@ -48,7 +60,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Update server
 
-    loop {
+    while running.load(Ordering::SeqCst) {
         server_stepper.wait_and_run(|| {
             let dt = Duration::from_secs_f32(fixed_dt);
 
@@ -84,4 +96,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             server_transport.send_packets(&mut server);
         });
     }
+
+    // Shutdown server
+
+    println!("[Dedicated Server] Disconnecting clients...");
+    server.disconnect_all();
+    // Flush packets
+    server_transport.send_packets(&mut server);
+    println!("[Dedicated Server] Shutdown complete!");
+
+    Ok(())
 }
