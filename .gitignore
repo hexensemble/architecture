@@ -30,3 +30,6 @@ Thumbs.db
 
 # Settings file
 settings.json
+
+# Log files
+logs/
