@@ -17,7 +17,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-fn innit_logging() -> Result<(), Box<dyn std::error::Error>> {
+fn init_logging() -> Result<(), Box<dyn std::error::Error>> {
     let log_dir = PathBuf::from("logs");
     fs::create_dir_all(&log_dir)?;
     let log_file = OpenOptions::new()
@@ -45,7 +45,7 @@ fn innit_logging() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    innit_logging()?;
+    init_logging()?;
 
     let current_time = SystemTime::now().duration_since(UNIX_EPOCH)?;
 
