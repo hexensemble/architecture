@@ -220,6 +220,7 @@ pub struct RemoteSession {
     client: Option<RenetClient>,
     client_transport: Option<NetcodeClientTransport>,
 
+    stepper: FixedStepper,
     latest_snapshot: Option<ServerWorldSnapshot>,
 }
 
@@ -230,6 +231,7 @@ impl RemoteSession {
                 server_addr,
                 client: None,
                 client_transport: None,
+                stepper: FixedStepper::new(MAX_STEPS_PER_FRAME),
                 latest_snapshot: None,
             }
         } else {
@@ -292,26 +294,37 @@ impl GameSession for RemoteSession {
             return;
         };
 
-        let dt = Duration::from_secs_f32(frame_dt.max(0.0));
+        self.stepper.add_time(frame_dt.max(0.0));
+        let fixed_dt = FIXED_DT;
 
-        // Update client
+        let mut should_disconnect = false;
 
-        client.update(dt);
+        self.stepper.run_steps(fixed_dt, || {
+            let dt = Duration::from_secs_f32(fixed_dt);
 
-        if let Err(e) = client_transport.update(dt, client) {
-            eprintln!("[Client] Client transport update error: {}", e);
-            client.disconnect();
-            return;
-        }
+            // Update client
 
-        while let Some(bytes) = client.receive_message(DefaultChannel::Unreliable) {
-            if let Ok(ServerMessage::Snapshot(snapshot)) = decode(bytes.as_ref()) {
-                self.latest_snapshot = Some(snapshot);
+            client.update(dt);
+
+            if let Err(e) = client_transport.update(dt, client) {
+                eprintln!("[Client] Client transport update error: {}", e);
+                should_disconnect = true;
+                return;
             }
-        }
 
-        if let Err(e) = client_transport.send_packets(client) {
-            eprintln!("[Client] Send packets error: {}", e);
+            while let Some(bytes) = client.receive_message(DefaultChannel::Unreliable) {
+                if let Ok(ServerMessage::Snapshot(snapshot)) = decode(bytes.as_ref()) {
+                    self.latest_snapshot = Some(snapshot);
+                }
+            }
+
+            if let Err(e) = client_transport.send_packets(client) {
+                eprintln!("[Client] Send packets error: {}", e);
+            }
+        });
+
+        if should_disconnect {
+            self.disconnect();
         }
     }
 
