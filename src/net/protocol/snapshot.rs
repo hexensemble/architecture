@@ -9,7 +9,7 @@ pub struct ServerWorldSnapshot {
 impl Default for ServerWorldSnapshot {
     fn default() -> Self {
         Self {
-            tick: 666,
+            tick: 0,
             entity_positions: Vec::new(),
         }
     }
