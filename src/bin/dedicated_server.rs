@@ -2,7 +2,7 @@ use architecture::net::config::*;
 use architecture::net::protocol::message::*;
 use architecture::net::server_sim::*;
 use architecture::net::stepper::*;
-use bitcode::encode;
+use bitcode::{decode, encode};
 use log::LevelFilter;
 use renet::{ConnectionConfig, DefaultChannel, RenetServer, ServerEvent};
 use renet_netcode::{NetcodeServerTransport, ServerAuthentication, ServerConfig};
@@ -111,6 +111,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 match event {
                     ServerEvent::ClientConnected { client_id } => {
                         log::info!("[Dedicated Server] Client connected: {}", client_id);
+
+                        sim.spawn_player(client_id);
                     }
                     ServerEvent::ClientDisconnected { client_id, reason } => {
                         log::info!(
@@ -118,6 +120,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             client_id,
                             reason
                         );
+
+                        sim.despawn_player(client_id);
+                    }
+                }
+            }
+
+            // Clear old client inputs
+            sim.reset_player_velocities();
+            // Process new client inputs
+            let client_ids: Vec<u64> = server.clients_id_iter().collect();
+            for client_id in client_ids {
+                while let Some(bytes) =
+                    server.receive_message(client_id, DefaultChannel::ReliableOrdered)
+                {
+                    if let Ok(ClientMessage::Input(input)) = decode(bytes.as_ref()) {
+                        sim.handle_input(client_id, input);
                     }
                 }
             }

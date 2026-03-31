@@ -4,6 +4,7 @@ use crate::app::layers::pause::PauseLayer;
 use crate::core::context::*;
 use crate::core::event::*;
 use crate::core::layer::*;
+use crate::net::protocol::input::*;
 use crate::net::session::*;
 use raylib::prelude::*;
 
@@ -25,18 +26,30 @@ impl Layer<Action> for GameLayer {
         ctx: &mut AppContext<Action>,
         rl: &mut RaylibHandle,
     ) -> Option<LayerCommand<Action>> {
-        //Client/Server stuff
+        // Player input
+        if ctx.actions.contains(Action::Up) {
+            self.session.send_input(PlayerInput::Up);
+        }
+        if ctx.actions.contains(Action::Down) {
+            self.session.send_input(PlayerInput::Down);
+        }
+        if ctx.actions.contains(Action::Left) {
+            self.session.send_input(PlayerInput::Left);
+        }
+        if ctx.actions.contains(Action::Right) {
+            self.session.send_input(PlayerInput::Right);
+        }
+
+        // Update session
         self.session.update(ctx.time.delta());
 
-        // Layer stuff
+        // Handle layers
         if ctx.actions.take(Action::Confirm) {
             return Some(LayerCommand::Replace(Box::new(MenuLayer)));
         }
-
         if ctx.actions.take(Action::Pause) {
             return Some(LayerCommand::Push(Box::new(PauseLayer)));
         }
-
         if ctx.actions.take(Action::Quit) {
             return Some(LayerCommand::Quit);
         }

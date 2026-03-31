@@ -1,8 +1,9 @@
 use crate::core::settings::*;
 use crate::net::config::*;
+use crate::net::protocol::input::*;
 use crate::net::protocol::message::*;
 use crate::net::protocol::snapshot::*;
-use crate::net::server_sim::ServerSim;
+use crate::net::server_sim::*;
 use crate::net::stepper::*;
 use bitcode::{decode, encode};
 use renet::{ConnectionConfig, DefaultChannel, RenetClient, RenetServer, ServerEvent};
@@ -17,6 +18,7 @@ pub trait GameSession {
     fn connect(&mut self);
     fn disconnect(&mut self);
     fn update(&mut self, frame_dt: f32);
+    fn send_input(&mut self, input: PlayerInput);
     fn latest_snapshot(&self) -> Option<&ServerWorldSnapshot>;
 }
 
@@ -164,12 +166,30 @@ impl GameSession for LocalSession {
                     ServerEvent::ClientConnected { client_id } => {
                         println!("[Local Server] Client connected: {}", client_id);
                         self.sim.reset();
+
+                        self.sim.spawn_player(client_id);
                     }
                     ServerEvent::ClientDisconnected { client_id, reason } => {
                         println!(
                             "[Local Server] Client disconnected: {}, {}",
                             client_id, reason
                         );
+
+                        self.sim.despawn_player(client_id);
+                    }
+                }
+            }
+
+            // Clear old client inputs
+            self.sim.reset_player_velocities();
+            // Process new client inputs
+            let client_ids: Vec<u64> = server.clients_id_iter().collect();
+            for client_id in client_ids {
+                while let Some(bytes) =
+                    server.receive_message(client_id, DefaultChannel::ReliableOrdered)
+                {
+                    if let Ok(ClientMessage::Input(input)) = decode(bytes.as_ref()) {
+                        self.sim.handle_input(client_id, input);
                     }
                 }
             }
@@ -207,6 +227,10 @@ impl GameSession for LocalSession {
         if should_disconnect {
             self.disconnect();
         }
+    }
+
+    fn send_input(&mut self, input: PlayerInput) {
+        send_client_input(&mut self.client, input);
     }
 
     fn latest_snapshot(&self) -> Option<&ServerWorldSnapshot> {
@@ -328,6 +352,10 @@ impl GameSession for RemoteSession {
         }
     }
 
+    fn send_input(&mut self, input: PlayerInput) {
+        send_client_input(&mut self.client, input);
+    }
+
     fn latest_snapshot(&self) -> Option<&ServerWorldSnapshot> {
         self.latest_snapshot.as_ref()
     }
@@ -349,4 +377,12 @@ fn disconnect_client(
     *client_transport = None;
 
     *latest_snapshot = None;
+}
+
+fn send_client_input(client: &mut Option<RenetClient>, input: PlayerInput) {
+    if let Some(c) = client.as_mut() {
+        let msg = ClientMessage::Input(input);
+
+        c.send_message(DefaultChannel::ReliableOrdered, encode(&msg));
+    }
 }
