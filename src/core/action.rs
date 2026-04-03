@@ -6,6 +6,7 @@ use std::fmt::Debug;
 pub trait ActionType: Copy + Clone + PartialEq + Debug + Serialize + DeserializeOwned {
     fn default_key_bindings() -> Vec<(KeyboardKey, Self)>;
     fn default_pad_bindings() -> Vec<(GamepadButton, Self)>;
+    fn is_continuous(&self) -> bool;
 }
 
 pub struct Actions<A: ActionType> {

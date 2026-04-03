@@ -77,13 +77,25 @@ impl<A: ActionType> Application<A> {
                     Event::KeyPressed(key) => {
                         if let Some(action) = self.ctx.bindings.key_bindings().get(key) {
                             self.ctx.actions.push(*action);
-                            println!("{:?}", action);
+                            println!("Key Pressed: {:?}", action);
+                        }
+                    }
+                    Event::KeyDown(key) => {
+                        if let Some(action) = self.ctx.bindings.key_bindings().get(key) {
+                            self.ctx.actions.push(*action);
+                            println!("Key Down: {:?}", action);
                         }
                     }
                     Event::PadPressed(_gamepad_id, pad) => {
                         if let Some(action) = self.ctx.bindings.pad_bindings().get(pad) {
                             self.ctx.actions.push(*action);
-                            println!("{:?}", action);
+                            println!("Pad Pressed: {:?}", action);
+                        }
+                    }
+                    Event::PadDown(_gamepad_id, pad) => {
+                        if let Some(action) = self.ctx.bindings.pad_bindings().get(pad) {
+                            self.ctx.actions.push(*action);
+                            println!("Pad Down: {:?}", action);
                         }
                     }
                     Event::MousePosition(_) => {}

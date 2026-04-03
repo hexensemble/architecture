@@ -51,4 +51,11 @@ impl ActionType for Action {
             (GamepadButton::GAMEPAD_BUTTON_LEFT_FACE_RIGHT, Action::Right),
         ]
     }
+
+    fn is_continuous(&self) -> bool {
+        matches!(
+            self,
+            Action::Up | Action::Down | Action::Left | Action::Right
+        )
+    }
 }
