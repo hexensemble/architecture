@@ -33,7 +33,7 @@ impl<A: ActionType> Application<A> {
                 settings,
                 bindings,
                 actions: Actions::new(),
-                time: Time::new(),
+                time: Time::default(),
             },
             layers: Vec::new(),
             running: true,
