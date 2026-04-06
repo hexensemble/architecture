@@ -22,10 +22,16 @@ pub trait GameSession {
     fn latest_snapshot(&self) -> Option<&ServerWorldSnapshot>;
 }
 
-pub fn make_session(settings: &NetSettings) -> Box<dyn GameSession> {
+pub fn make_session(
+    settings: &NetSettings,
+) -> Result<Box<dyn GameSession>, Box<dyn std::error::Error>> {
     match settings.mode {
-        NetMode::Local => Box::new(LocalSession::default()),
-        NetMode::Remote => Box::new(RemoteSession::new(settings.server_addr.clone())),
+        NetMode::Local => Ok(Box::new(LocalSession::default())),
+        NetMode::Remote => {
+            let remote_session = RemoteSession::new(settings.server_addr.clone())?;
+
+            Ok(Box::new(remote_session))
+        }
     }
 }
 
@@ -249,18 +255,16 @@ pub struct RemoteSession {
 }
 
 impl RemoteSession {
-    pub fn new(server_addr: String) -> Self {
-        if let Ok(server_addr) = server_addr.parse() {
-            Self {
-                server_addr,
-                client: None,
-                client_transport: None,
-                stepper: FixedStepper::new(MAX_STEPS_PER_FRAME),
-                latest_snapshot: None,
-            }
-        } else {
-            panic!("Invalid server address! Must be in format: 127.0.0.1:27960");
-        }
+    pub fn new(server_addr: String) -> Result<Self, Box<dyn std::error::Error>> {
+        let parsed_addr = server_addr.parse()?;
+
+        Ok(Self {
+            server_addr: parsed_addr,
+            client: None,
+            client_transport: None,
+            stepper: FixedStepper::new(MAX_STEPS_PER_FRAME),
+            latest_snapshot: None,
+        })
     }
 }
 

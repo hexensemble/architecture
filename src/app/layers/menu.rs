@@ -17,9 +17,15 @@ impl Layer<Action> for MenuLayer {
         rl: &mut RaylibHandle,
     ) -> Option<LayerCommand<Action>> {
         if ctx.actions.take(Action::Confirm) {
-            return Some(LayerCommand::Replace(Box::new(GameLayer::new(
-                make_session(&ctx.settings.net_settings),
-            ))));
+            match make_session(&ctx.settings.net_settings) {
+                Ok(session) => {
+                    return Some(LayerCommand::Replace(Box::new(GameLayer::new(session))));
+                }
+                Err(e) => {
+                    eprintln!("Failed to create game session: {}", e);
+                    return None;
+                }
+            }
         }
 
         if ctx.actions.take(Action::Quit) {
