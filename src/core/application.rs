@@ -32,7 +32,7 @@ impl<A: ActionType> Application<A> {
             ctx: AppContext {
                 settings,
                 bindings,
-                actions: Actions::new(),
+                actions: Actions::default(),
                 time: Time::default(),
             },
             layers: Vec::new(),

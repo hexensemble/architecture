@@ -14,12 +14,6 @@ pub struct Actions<A: ActionType> {
 }
 
 impl<A: ActionType> Actions<A> {
-    pub fn new() -> Self {
-        Self {
-            actions: Vec::new(),
-        }
-    }
-
     pub fn clear(&mut self) {
         self.actions.clear();
     }
@@ -38,6 +32,14 @@ impl<A: ActionType> Actions<A> {
             true
         } else {
             false
+        }
+    }
+}
+
+impl<A: ActionType> Default for Actions<A> {
+    fn default() -> Self {
+        Self {
+            actions: Vec::new(),
         }
     }
 }
