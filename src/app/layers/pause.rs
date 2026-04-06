@@ -15,9 +15,9 @@ impl Layer<Action> for PauseLayer {
         rl: &mut RaylibHandle,
     ) -> Option<LayerCommand<Action>> {
         if ctx.actions.take(Action::Pause) {
-            return Some(LayerCommand::Pop);
+            Some(LayerCommand::Pop)
         } else {
-            return Some(LayerCommand::None);
+            Some(LayerCommand::None)
         }
     }
 
