@@ -57,9 +57,9 @@ impl ServerSim {
             if owner.0 == client_id {
                 match input {
                     PlayerInput::Up => vel.y -= PLAYER_SPEED,
-                    PlayerInput::Down => vel.y = PLAYER_SPEED,
+                    PlayerInput::Down => vel.y += PLAYER_SPEED,
                     PlayerInput::Left => vel.x -= PLAYER_SPEED,
-                    PlayerInput::Right => vel.x = PLAYER_SPEED,
+                    PlayerInput::Right => vel.x += PLAYER_SPEED,
                 }
 
                 break;
