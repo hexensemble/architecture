@@ -1,51 +1,19 @@
+use architecture::core::log::*;
 use architecture::net::config::*;
 use architecture::net::protocol::message::*;
 use architecture::net::server_sim::*;
 use architecture::net::stepper::*;
 use bitcode::{decode, encode};
-use log::LevelFilter;
 use renet::{ConnectionConfig, DefaultChannel, RenetServer, ServerEvent};
 use renet_netcode::{NetcodeServerTransport, ServerAuthentication, ServerConfig};
-use simplelog::{
-    ColorChoice, CombinedLogger, ConfigBuilder, LevelPadding, TermLogger, TerminalMode, WriteLogger,
-};
 use std::env;
-use std::fs::{self, OpenOptions};
 use std::net::UdpSocket;
-use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-fn init_logging() -> Result<(), Box<dyn std::error::Error>> {
-    let log_dir = PathBuf::from("logs");
-    fs::create_dir_all(&log_dir)?;
-    let log_file = OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(log_dir.join("dedicated_server.log"))?;
-
-    let config = ConfigBuilder::new()
-        .set_time_level(LevelFilter::Info)
-        .set_level_padding(LevelPadding::Right)
-        .build();
-
-    let file_logger = WriteLogger::new(LevelFilter::Info, config.clone(), log_file);
-
-    let term_logger = TermLogger::new(
-        LevelFilter::Info,
-        config.clone(),
-        TerminalMode::Mixed,
-        ColorChoice::Auto,
-    );
-
-    CombinedLogger::init(vec![file_logger, term_logger])?;
-
-    Ok(())
-}
-
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    init_logging()?;
+    init_logging("dedicated_server.log".to_string())?;
 
     let current_time = SystemTime::now().duration_since(UNIX_EPOCH)?;
 
