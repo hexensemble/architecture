@@ -78,7 +78,7 @@ impl ServerStepper {
         // Give up if too far behind
         if ticks_behind > self.max_catchup_steps {
             let skipped = ticks_behind - self.max_catchup_steps;
-            println!("[Server Stepper] Falling behind, skipped {} ticks", skipped);
+            log::warn!("[Server Stepper] Falling behind, skipped {} ticks", skipped);
             self.next_tick = Instant::now();
         }
     }

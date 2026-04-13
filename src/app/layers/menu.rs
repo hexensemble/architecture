@@ -22,7 +22,7 @@ impl Layer<Action> for MenuLayer {
                     return Some(LayerCommand::Replace(Box::new(GameLayer::new(session))));
                 }
                 Err(e) => {
-                    eprintln!("Failed to create game session: {}", e);
+                    log::error!("Failed to create game session: {}", e);
                     return None;
                 }
             }

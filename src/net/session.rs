@@ -128,7 +128,7 @@ impl GameSession for LocalSession {
 
         self.latest_snapshot = None;
 
-        println!("[Local Server] Listening on: {}", server_addr);
+        log::info!("[Local Server] Listening on: {}", server_addr);
     }
 
     fn disconnect(&mut self) {
@@ -162,7 +162,7 @@ impl GameSession for LocalSession {
             server.update(dt);
 
             if let Err(e) = server_transport.update(dt, server) {
-                eprintln!("[Local Server] Server transport update error: {}", e);
+                log::error!("[Local Server] Server transport update error: {}", e);
                 should_disconnect = true;
                 return;
             }
@@ -170,15 +170,16 @@ impl GameSession for LocalSession {
             while let Some(event) = server.get_event() {
                 match event {
                     ServerEvent::ClientConnected { client_id } => {
-                        println!("[Local Server] Client connected: {}", client_id);
+                        log::info!("[Local Server] Client connected: {}", client_id);
                         self.sim.reset();
 
                         self.sim.spawn_player(client_id);
                     }
                     ServerEvent::ClientDisconnected { client_id, reason } => {
-                        println!(
+                        log::info!(
                             "[Local Server] Client disconnected: {}, {}",
-                            client_id, reason
+                            client_id,
+                            reason
                         );
 
                         self.sim.despawn_player(client_id);
@@ -214,7 +215,7 @@ impl GameSession for LocalSession {
             client.update(dt);
 
             if let Err(e) = client_transport.update(dt, client) {
-                eprintln!("[Client] Client transport update error: {}", e);
+                log::error!("[Client] Client transport update error: {}", e);
                 should_disconnect = true;
                 return;
             }
@@ -226,7 +227,7 @@ impl GameSession for LocalSession {
             }
 
             if let Err(e) = client_transport.send_packets(client) {
-                eprintln!("[Client] Send packets error: {}", e);
+                log::error!("[Client] Send packets error: {}", e);
             }
         });
 
@@ -335,7 +336,7 @@ impl GameSession for RemoteSession {
             client.update(dt);
 
             if let Err(e) = client_transport.update(dt, client) {
-                eprintln!("[Client] Client transport update error: {}", e);
+                log::error!("[Client] Client transport update error: {}", e);
                 should_disconnect = true;
                 return;
             }
@@ -347,7 +348,7 @@ impl GameSession for RemoteSession {
             }
 
             if let Err(e) = client_transport.send_packets(client) {
-                eprintln!("[Client] Send packets error: {}", e);
+                log::error!("[Client] Send packets error: {}", e);
             }
         });
 
