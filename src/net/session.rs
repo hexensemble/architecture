@@ -129,6 +129,7 @@ impl GameSession for LocalSession {
 
     fn disconnect(&mut self) {
         // Disconnect Client
+
         if let (Some(client), Some(client_transport)) =
             (self.client.as_mut(), self.client_transport.as_mut())
         {
@@ -141,6 +142,7 @@ impl GameSession for LocalSession {
         }
 
         // Disconnect Server
+
         if let (Some(server), Some(server_transport)) =
             (self.server.as_mut(), self.server_transport.as_mut())
         {
@@ -339,13 +341,14 @@ impl GameSession for RemoteSession {
 
     fn disconnect(&mut self) {
         // Disconnect Client
-        if let (Some(client), Some(client_transportt)) =
+
+        if let (Some(client), Some(client_transport)) =
             (self.client.as_mut(), self.client_transport.as_mut())
         {
             client.disconnect();
 
             // Flush packets
-            let _ = client_transportt.send_packets(client);
+            let _ = client_transport.send_packets(client);
 
             log::info!("[Client] Disconnected from server")
         }
