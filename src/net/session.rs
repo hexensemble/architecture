@@ -149,17 +149,14 @@ impl GameSession for LocalSession {
             server_transport.disconnect_all(server);
 
             while let Some(event) = server.get_event() {
-                match event {
-                    ServerEvent::ClientDisconnected { client_id, reason } => {
-                        log::info!(
-                            "[Local Server] Client disconnected: {}, {}",
-                            client_id,
-                            reason
-                        );
+                if let ServerEvent::ClientDisconnected { client_id, reason } = event {
+                    log::info!(
+                        "[Local Server] Client disconnected: {}, {}",
+                        client_id,
+                        reason
+                    );
 
-                        self.sim.despawn_player(client_id);
-                    }
-                    _ => {}
+                    self.sim.despawn_player(client_id);
                 }
             }
         }
@@ -214,7 +211,12 @@ impl GameSession for LocalSession {
 
                         self.sim.spawn_player(client_id);
                     }
-                    _ => {}
+                    ServerEvent::ClientDisconnected {
+                        client_id,
+                        reason: _,
+                    } => {
+                        self.sim.despawn_player(client_id);
+                    }
                 }
             }
 
