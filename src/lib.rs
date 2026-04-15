@@ -1,4 +1,4 @@
 pub mod app;
-pub mod core;
+pub mod engine;
 pub mod game;
 pub mod net;

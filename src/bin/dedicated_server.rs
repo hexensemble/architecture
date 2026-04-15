@@ -1,4 +1,4 @@
-use architecture::core::log::*;
+use architecture::engine::logging::*;
 use architecture::net::config::*;
 use architecture::net::protocol::message::*;
 use architecture::net::server_sim::*;

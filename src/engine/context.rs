@@ -1,7 +1,7 @@
-use crate::core::action::*;
-use crate::core::bindings::*;
-use crate::core::settings::*;
-use crate::core::time::*;
+use crate::engine::action::*;
+use crate::engine::bindings::*;
+use crate::engine::settings::*;
+use crate::engine::time::*;
 
 pub struct AppContext<A: ActionType> {
     pub settings: Settings<A>,

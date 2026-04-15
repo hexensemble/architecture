@@ -1,10 +1,10 @@
-use crate::core::action::*;
-use crate::core::bindings::*;
-use crate::core::context::*;
-use crate::core::event::*;
-use crate::core::layer::*;
-use crate::core::settings::*;
-use crate::core::time::*;
+use crate::engine::action::*;
+use crate::engine::bindings::*;
+use crate::engine::context::*;
+use crate::engine::event::*;
+use crate::engine::layer::*;
+use crate::engine::settings::*;
+use crate::engine::time::*;
 use raylib::prelude::*;
 
 pub struct Application<A: ActionType> {

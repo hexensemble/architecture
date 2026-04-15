@@ -1,13 +1,13 @@
-use crate::core::action::*;
-use crate::core::application::*;
-use crate::core::logging::*;
-use crate::core::settings::*;
+use crate::engine::action::*;
+use crate::engine::application::*;
+use crate::engine::logging::*;
+use crate::engine::settings::*;
 use std::fs;
 use std::path::PathBuf;
 use std::process;
 
 mod app;
-mod core;
+mod engine;
 mod game;
 mod net;
 

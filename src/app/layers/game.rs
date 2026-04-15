@@ -1,9 +1,9 @@
 use crate::app::action::*;
 use crate::app::layers::menu::MenuLayer;
 use crate::app::layers::pause::PauseLayer;
-use crate::core::context::*;
-use crate::core::event::*;
-use crate::core::layer::*;
+use crate::engine::context::*;
+use crate::engine::event::*;
+use crate::engine::layer::*;
 use crate::net::protocol::input::*;
 use crate::net::session::*;
 use raylib::prelude::*;

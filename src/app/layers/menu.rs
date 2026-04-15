@@ -1,8 +1,8 @@
 use crate::app::action::*;
 use crate::app::layers::game::GameLayer;
-use crate::core::context::*;
-use crate::core::event::*;
-use crate::core::layer::*;
+use crate::engine::context::*;
+use crate::engine::event::*;
+use crate::engine::layer::*;
 use crate::net::session::*;
 use raylib::prelude::*;
 

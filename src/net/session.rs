@@ -1,4 +1,4 @@
-use crate::core::settings::*;
+use crate::engine::settings::*;
 use crate::net::config::*;
 use crate::net::protocol::input::*;
 use crate::net::protocol::message::*;
