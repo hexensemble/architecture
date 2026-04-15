@@ -1,6 +1,6 @@
 use crate::core::action::*;
 use crate::core::application::*;
-use crate::core::log::*;
+use crate::core::logging::*;
 use crate::core::settings::*;
 use std::fs;
 use std::path::PathBuf;

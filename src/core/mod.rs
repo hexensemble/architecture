@@ -4,6 +4,6 @@ pub mod bindings;
 pub mod context;
 pub mod event;
 pub mod layer;
-pub mod log;
+pub mod logging;
 pub mod settings;
 pub mod time;
