@@ -109,7 +109,7 @@ impl GameSession for LocalSession {
 
         // Start local session
 
-        log::info!("[Local Server] Starting server...");
+        log::info!("[Local Server] Starting server");
 
         self.sim.reset();
 
@@ -159,6 +159,12 @@ impl GameSession for LocalSession {
                     self.sim.despawn_player(client_id);
                 }
             }
+
+            log::info!("[Local Server] Shutting down server");
+
+            // Flush packets
+            server_transport.send_packets(server);
+            log::info!("[Local Server] Shutdown complete");
         }
 
         self.client = None;

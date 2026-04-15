@@ -46,13 +46,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let running_clone = running.clone();
 
     ctrlc::set_handler(move || {
-        log::info!("[Dedicated Server] Shutting down server...");
+        log::info!("[Dedicated Server] Shutting down server");
         running_clone.store(false, Ordering::SeqCst);
     })?;
 
     // Start server
 
-    log::info!("[Dedicated Server] Starting server...");
+    log::info!("[Dedicated Server] Starting server");
 
     let mut sim = ServerSim::default();
     sim.reset();
@@ -122,11 +122,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Shutdown server
 
-    log::info!("[Dedicated Server] Disconnecting clients...");
+    log::info!("[Dedicated Server] Disconnecting clients");
     server.disconnect_all();
     // Flush packets
     server_transport.send_packets(&mut server);
-    log::info!("[Dedicated Server] Shutdown complete!");
+    log::info!("[Dedicated Server] Shutdown complete");
 
     Ok(())
 }
