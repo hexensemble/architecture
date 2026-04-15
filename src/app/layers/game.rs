@@ -80,7 +80,10 @@ impl Layer<Action> for GameLayer {
     fn on_attach(&mut self, ctx: &mut AppContext<Action>) {
         println!("Attaching game layer...");
 
-        self.session.connect();
+        match self.session.connect() {
+            Ok(()) => {}
+            Err(e) => log::error!("Failed to create game session: {}", e),
+        }
     }
 
     fn on_detach(&mut self, ctx: &mut AppContext<Action>) {

@@ -15,7 +15,7 @@ use std::net::{SocketAddr, UdpSocket};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 pub trait GameSession {
-    fn connect(&mut self);
+    fn connect(&mut self) -> Result<(), Box<dyn std::error::Error>>;
     fn disconnect(&mut self);
     fn update(&mut self, frame_dt: f32);
     fn send_input(&mut self, input: PlayerInput);
@@ -41,6 +41,7 @@ pub struct LocalSession {
 
     client: Option<RenetClient>,
     client_transport: Option<NetcodeClientTransport>,
+    client_connected: bool,
 
     stepper: FixedStepper,
     sim: ServerSim,
@@ -54,6 +55,7 @@ impl Default for LocalSession {
             server_transport: None,
             client: None,
             client_transport: None,
+            client_connected: false,
             stepper: FixedStepper::new(MAX_STEPS_PER_FRAME),
             sim: ServerSim::default(),
             latest_snapshot: None,
@@ -62,28 +64,21 @@ impl Default for LocalSession {
 }
 
 impl GameSession for LocalSession {
-    fn connect(&mut self) {
+    fn connect(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         if self.server.is_some() {
-            return;
+            return Err("Server already exists!".into());
         }
 
-        let current_time = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .expect("System clock before Unix epoch?");
+        let current_time = SystemTime::now().duration_since(UNIX_EPOCH)?;
 
         // Create local server
 
         let server = RenetServer::new(ConnectionConfig::default());
 
-        let server_socket =
-            UdpSocket::bind(LOCAL_ADDR).expect("Failed to bind local server UDP socket.");
-        server_socket
-            .set_nonblocking(true)
-            .expect("Failed to set non blocking on local server socket.");
+        let server_socket = UdpSocket::bind(LOCAL_ADDR)?;
+        server_socket.set_nonblocking(true)?;
 
-        let server_addr = server_socket
-            .local_addr()
-            .expect("Local server address failed.");
+        let server_addr = server_socket.local_addr()?;
 
         let server_config = ServerConfig {
             current_time,
@@ -93,17 +88,14 @@ impl GameSession for LocalSession {
             authentication: ServerAuthentication::Unsecure,
         };
 
-        let server_transport = NetcodeServerTransport::new(server_config, server_socket)
-            .expect("Failed to initialize local server transport.");
+        let server_transport = NetcodeServerTransport::new(server_config, server_socket)?;
 
         // Create client
 
         let client = RenetClient::new(ConnectionConfig::default());
 
-        let client_socket = UdpSocket::bind(LOCAL_ADDR).expect("Failed to bind client UDP socket.");
-        client_socket
-            .set_nonblocking(true)
-            .expect("Failed to set non blocking on client socket.");
+        let client_socket = UdpSocket::bind(LOCAL_ADDR)?;
+        client_socket.set_nonblocking(true)?;
 
         let authentication = ClientAuthentication::Unsecure {
             protocol_id: PROTOCOL_ID,
@@ -113,10 +105,11 @@ impl GameSession for LocalSession {
         };
 
         let client_transport =
-            NetcodeClientTransport::new(current_time, authentication, client_socket)
-                .expect("Failed to initialize client transport.");
+            NetcodeClientTransport::new(current_time, authentication, client_socket)?;
 
         // Start local session
+
+        log::info!("[Local Server] Starting server...");
 
         self.sim.reset();
 
@@ -129,12 +122,16 @@ impl GameSession for LocalSession {
         self.latest_snapshot = None;
 
         log::info!("[Local Server] Listening on: {}", server_addr);
+        log::info!("[Client] Connecting to server on: {}", server_addr);
+
+        Ok(())
     }
 
     fn disconnect(&mut self) {
         disconnect_client(
             &mut self.client,
             &mut self.client_transport,
+            &mut self.client_connected,
             &mut self.latest_snapshot,
         );
     }
@@ -148,6 +145,11 @@ impl GameSession for LocalSession {
         ) else {
             return;
         };
+
+        if client.is_connected() && !self.client_connected {
+            self.client_connected = true;
+            log::info!("[Client] Connected to server");
+        }
 
         self.stepper.add_time(frame_dt.max(0.0));
         let fixed_dt = self.sim.fixed_dt();
@@ -250,6 +252,7 @@ pub struct RemoteSession {
 
     client: Option<RenetClient>,
     client_transport: Option<NetcodeClientTransport>,
+    client_connected: bool,
 
     stepper: FixedStepper,
     latest_snapshot: Option<ServerWorldSnapshot>,
@@ -263,6 +266,7 @@ impl RemoteSession {
             server_addr: parsed_addr,
             client: None,
             client_transport: None,
+            client_connected: false,
             stepper: FixedStepper::new(MAX_STEPS_PER_FRAME),
             latest_snapshot: None,
         })
@@ -270,24 +274,19 @@ impl RemoteSession {
 }
 
 impl GameSession for RemoteSession {
-    fn connect(&mut self) {
+    fn connect(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         if self.client.is_some() {
-            return;
+            return Err("Client already exists!".into());
         }
 
-        let current_time = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .expect("System clock before Unix epoch?");
+        let current_time = SystemTime::now().duration_since(UNIX_EPOCH)?;
 
         // Create client
 
         let client = RenetClient::new(ConnectionConfig::default());
 
-        let client_socket =
-            UdpSocket::bind(CLIENT_ADDR).expect("Failed to bind client UPD socket.");
-        client_socket
-            .set_nonblocking(true)
-            .expect("Failed to set non blocking on client socket.");
+        let client_socket = UdpSocket::bind(CLIENT_ADDR)?;
+        client_socket.set_nonblocking(true)?;
 
         let authentication = ClientAuthentication::Unsecure {
             protocol_id: PROTOCOL_ID,
@@ -297,8 +296,7 @@ impl GameSession for RemoteSession {
         };
 
         let client_transport =
-            NetcodeClientTransport::new(current_time, authentication, client_socket)
-                .expect("Failed to initialize client transport.");
+            NetcodeClientTransport::new(current_time, authentication, client_socket)?;
 
         // Start remote session
 
@@ -306,12 +304,17 @@ impl GameSession for RemoteSession {
         self.client_transport = Some(client_transport);
 
         self.latest_snapshot = None;
+
+        log::info!("[Client] Connecting to server on: {}", self.server_addr);
+
+        Ok(())
     }
 
     fn disconnect(&mut self) {
         disconnect_client(
             &mut self.client,
             &mut self.client_transport,
+            &mut self.client_connected,
             &mut self.latest_snapshot,
         );
     }
@@ -322,6 +325,11 @@ impl GameSession for RemoteSession {
         else {
             return;
         };
+
+        if client.is_connected() && !self.client_connected {
+            self.client_connected = true;
+            log::info!("[Client] Connected to server")
+        }
 
         self.stepper.add_time(frame_dt.max(0.0));
         let fixed_dt = FIXED_DT;
@@ -369,6 +377,7 @@ impl GameSession for RemoteSession {
 fn disconnect_client(
     client: &mut Option<RenetClient>,
     client_transport: &mut Option<NetcodeClientTransport>,
+    client_connected: &mut bool,
     latest_snapshot: &mut Option<ServerWorldSnapshot>,
 ) {
     if let (Some(c), Some(ct)) = (client.as_mut(), client_transport.as_mut()) {
@@ -380,8 +389,11 @@ fn disconnect_client(
 
     *client = None;
     *client_transport = None;
+    *client_connected = false;
 
     *latest_snapshot = None;
+
+    log::info!("[Client] Disconnected from server")
 }
 
 fn send_client_input(client: &mut Option<RenetClient>, input: PlayerInput) {
