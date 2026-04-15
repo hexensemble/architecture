@@ -128,12 +128,47 @@ impl GameSession for LocalSession {
     }
 
     fn disconnect(&mut self) {
-        disconnect_client(
-            &mut self.client,
-            &mut self.client_transport,
-            &mut self.client_connected,
-            &mut self.latest_snapshot,
-        );
+        // Disconnect Client
+        if let (Some(client), Some(client_transport)) =
+            (self.client.as_mut(), self.client_transport.as_mut())
+        {
+            client.disconnect();
+
+            // Flush packets
+            let _ = client_transport.send_packets(client);
+
+            log::info!("[Client] Disconnected from server")
+        }
+
+        // Disconnect Server
+        if let (Some(server), Some(server_transport)) =
+            (self.server.as_mut(), self.server_transport.as_mut())
+        {
+            server_transport.disconnect_all(server);
+
+            while let Some(event) = server.get_event() {
+                match event {
+                    ServerEvent::ClientDisconnected { client_id, reason } => {
+                        log::info!(
+                            "[Local Server] Client disconnected: {}, {}",
+                            client_id,
+                            reason
+                        );
+
+                        self.sim.despawn_player(client_id);
+                    }
+                    _ => {}
+                }
+            }
+        }
+
+        self.client = None;
+        self.client_transport = None;
+
+        self.server = None;
+        self.server_transport = None;
+
+        self.latest_snapshot = None;
     }
 
     fn update(&mut self, frame_dt: f32) {
@@ -177,15 +212,7 @@ impl GameSession for LocalSession {
 
                         self.sim.spawn_player(client_id);
                     }
-                    ServerEvent::ClientDisconnected { client_id, reason } => {
-                        log::info!(
-                            "[Local Server] Client disconnected: {}, {}",
-                            client_id,
-                            reason
-                        );
-
-                        self.sim.despawn_player(client_id);
-                    }
+                    _ => {}
                 }
             }
 
@@ -311,12 +338,22 @@ impl GameSession for RemoteSession {
     }
 
     fn disconnect(&mut self) {
-        disconnect_client(
-            &mut self.client,
-            &mut self.client_transport,
-            &mut self.client_connected,
-            &mut self.latest_snapshot,
-        );
+        // Disconnect Client
+        if let (Some(client), Some(client_transportt)) =
+            (self.client.as_mut(), self.client_transport.as_mut())
+        {
+            client.disconnect();
+
+            // Flush packets
+            let _ = client_transportt.send_packets(client);
+
+            log::info!("[Client] Disconnected from server")
+        }
+
+        self.client = None;
+        self.client_transport = None;
+
+        self.latest_snapshot = None;
     }
 
     fn update(&mut self, frame_dt: f32) {
@@ -372,28 +409,6 @@ impl GameSession for RemoteSession {
     fn latest_snapshot(&self) -> Option<&ServerWorldSnapshot> {
         self.latest_snapshot.as_ref()
     }
-}
-
-fn disconnect_client(
-    client: &mut Option<RenetClient>,
-    client_transport: &mut Option<NetcodeClientTransport>,
-    client_connected: &mut bool,
-    latest_snapshot: &mut Option<ServerWorldSnapshot>,
-) {
-    if let (Some(c), Some(ct)) = (client.as_mut(), client_transport.as_mut()) {
-        c.disconnect();
-
-        // Flush packets
-        let _ = ct.send_packets(c);
-    }
-
-    *client = None;
-    *client_transport = None;
-    *client_connected = false;
-
-    *latest_snapshot = None;
-
-    log::info!("[Client] Disconnected from server")
 }
 
 fn send_client_input(client: &mut Option<RenetClient>, input: PlayerInput) {
