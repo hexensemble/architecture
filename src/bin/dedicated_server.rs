@@ -3,19 +3,16 @@ use architecture::net::config::*;
 use architecture::net::protocol::message::*;
 use architecture::net::server_sim::*;
 use architecture::net::stepper::*;
+use architecture::net::transport::*;
 use bitcode::{decode, encode};
-use renet::{ConnectionConfig, DefaultChannel, RenetServer, ServerEvent};
-use renet_netcode::{NetcodeServerTransport, ServerAuthentication, ServerConfig};
+use renet::{DefaultChannel, ServerEvent};
 use std::env;
-use std::net::UdpSocket;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::Duration;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     init_logging("dedicated_server.log".to_string())?;
-
-    let current_time = SystemTime::now().duration_since(UNIX_EPOCH)?;
 
     let addr = env::args()
         .nth(1)
@@ -23,22 +20,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create server
 
-    let mut server = RenetServer::new(ConnectionConfig::default());
-
-    let server_socket = UdpSocket::bind(addr)?;
-    server_socket.set_nonblocking(true)?;
-
-    let server_addr = server_socket.local_addr()?;
-
-    let server_config = ServerConfig {
-        current_time,
-        max_clients: MAX_CLIENTS,
-        protocol_id: PROTOCOL_ID,
-        public_addresses: vec![server_addr],
-        authentication: ServerAuthentication::Unsecure,
-    };
-
-    let mut server_transport = NetcodeServerTransport::new(server_config, server_socket)?;
+    let (mut server, mut server_transport, server_addr) = create_server(addr.clone())?;
 
     // Create server shutdown handler
 

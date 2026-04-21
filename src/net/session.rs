@@ -5,12 +5,10 @@ use crate::net::protocol::message::*;
 use crate::net::protocol::snapshot::*;
 use crate::net::server_sim::*;
 use crate::net::stepper::*;
+use crate::net::transport::*;
 use bitcode::{decode, encode};
 use renet::{ConnectionConfig, DefaultChannel, RenetClient, RenetServer, ServerEvent};
-use renet_netcode::{
-    ClientAuthentication, NetcodeClientTransport, NetcodeServerTransport, ServerAuthentication,
-    ServerConfig,
-};
+use renet_netcode::{ClientAuthentication, NetcodeClientTransport, NetcodeServerTransport};
 use std::net::{SocketAddr, UdpSocket};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -69,28 +67,13 @@ impl GameSession for LocalSession {
             return Err("Server already exists!".into());
         }
 
-        let current_time = SystemTime::now().duration_since(UNIX_EPOCH)?;
-
         // Create local server
 
-        let server = RenetServer::new(ConnectionConfig::default());
-
-        let server_socket = UdpSocket::bind(LOCAL_ADDR)?;
-        server_socket.set_nonblocking(true)?;
-
-        let server_addr = server_socket.local_addr()?;
-
-        let server_config = ServerConfig {
-            current_time,
-            max_clients: MAX_CLIENTS,
-            protocol_id: PROTOCOL_ID,
-            public_addresses: vec![server_addr],
-            authentication: ServerAuthentication::Unsecure,
-        };
-
-        let server_transport = NetcodeServerTransport::new(server_config, server_socket)?;
+        let (server, server_transport, server_addr) = create_server(LOCAL_ADDR.to_string())?;
 
         // Create client
+
+        let current_time = SystemTime::now().duration_since(UNIX_EPOCH)?;
 
         let client = RenetClient::new(ConnectionConfig::default());
 
@@ -316,9 +299,9 @@ impl GameSession for RemoteSession {
             return Err("Client already exists!".into());
         }
 
-        let current_time = SystemTime::now().duration_since(UNIX_EPOCH)?;
-
         // Create client
+
+        let current_time = SystemTime::now().duration_since(UNIX_EPOCH)?;
 
         let client = RenetClient::new(ConnectionConfig::default());
 
