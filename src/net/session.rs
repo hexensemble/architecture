@@ -7,10 +7,10 @@ use crate::net::server_sim::*;
 use crate::net::stepper::*;
 use crate::net::transport::*;
 use bitcode::{decode, encode};
-use renet::{ConnectionConfig, DefaultChannel, RenetClient, RenetServer, ServerEvent};
-use renet_netcode::{ClientAuthentication, NetcodeClientTransport, NetcodeServerTransport};
-use std::net::{SocketAddr, UdpSocket};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use renet::{DefaultChannel, RenetClient, RenetServer, ServerEvent};
+use renet_netcode::{NetcodeClientTransport, NetcodeServerTransport};
+use std::net::SocketAddr;
+use std::time::Duration;
 
 pub trait GameSession {
     fn connect(&mut self) -> Result<(), Box<dyn std::error::Error>>;
@@ -73,22 +73,7 @@ impl GameSession for LocalSession {
 
         // Create client
 
-        let current_time = SystemTime::now().duration_since(UNIX_EPOCH)?;
-
-        let client = RenetClient::new(ConnectionConfig::default());
-
-        let client_socket = UdpSocket::bind(LOCAL_ADDR)?;
-        client_socket.set_nonblocking(true)?;
-
-        let authentication = ClientAuthentication::Unsecure {
-            protocol_id: PROTOCOL_ID,
-            client_id: make_client_id(),
-            server_addr,
-            user_data: None,
-        };
-
-        let client_transport =
-            NetcodeClientTransport::new(current_time, authentication, client_socket)?;
+        let (client, client_transport) = create_client(LOCAL_ADDR.to_string(), server_addr)?;
 
         // Start local session
 
@@ -301,22 +286,7 @@ impl GameSession for RemoteSession {
 
         // Create client
 
-        let current_time = SystemTime::now().duration_since(UNIX_EPOCH)?;
-
-        let client = RenetClient::new(ConnectionConfig::default());
-
-        let client_socket = UdpSocket::bind(CLIENT_ADDR)?;
-        client_socket.set_nonblocking(true)?;
-
-        let authentication = ClientAuthentication::Unsecure {
-            protocol_id: PROTOCOL_ID,
-            client_id: make_client_id(),
-            server_addr: self.server_addr,
-            user_data: None,
-        };
-
-        let client_transport =
-            NetcodeClientTransport::new(current_time, authentication, client_socket)?;
+        let (client, client_transport) = create_client(CLIENT_ADDR.to_string(), self.server_addr)?;
 
         // Start remote session
 

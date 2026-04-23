@@ -1,6 +1,9 @@
 use crate::net::config::*;
-use renet::{ConnectionConfig, RenetServer};
-use renet_netcode::{NetcodeServerTransport, ServerAuthentication, ServerConfig};
+use renet::{ConnectionConfig, RenetClient, RenetServer};
+use renet_netcode::{
+    ClientAuthentication, NetcodeClientTransport, NetcodeServerTransport, ServerAuthentication,
+    ServerConfig,
+};
 use std::net::{SocketAddr, UdpSocket};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -27,4 +30,28 @@ pub fn create_server(
     let server_transport = NetcodeServerTransport::new(server_config, server_socket)?;
 
     Ok((server, server_transport, server_addr))
+}
+
+pub fn create_client(
+    addr: String,
+    server_addr: SocketAddr,
+) -> Result<(RenetClient, NetcodeClientTransport), Box<dyn std::error::Error>> {
+    let current_time = SystemTime::now().duration_since(UNIX_EPOCH)?;
+
+    let client = RenetClient::new(ConnectionConfig::default());
+
+    let client_socket = UdpSocket::bind(addr)?;
+    client_socket.set_nonblocking(true)?;
+
+    let authentication = ClientAuthentication::Unsecure {
+        protocol_id: PROTOCOL_ID,
+        client_id: make_client_id(),
+        server_addr,
+        user_data: None,
+    };
+
+    let client_transport =
+        NetcodeClientTransport::new(current_time, authentication, client_socket)?;
+
+    Ok((client, client_transport))
 }
