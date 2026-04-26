@@ -84,12 +84,13 @@ impl GameSession for LocalSession {
         self.server = Some(server);
         self.server_transport = Some(server_transport);
 
+        log::info!("[Local Server] Listening on: {}", server_addr);
+
         self.client = Some(client);
         self.client_transport = Some(client_transport);
 
         self.latest_snapshot = None;
 
-        log::info!("[Local Server] Listening on: {}", server_addr);
         log::info!("[Client] Connecting to server on: {}", server_addr);
 
         Ok(())
