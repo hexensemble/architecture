@@ -1,15 +1,11 @@
 use architecture::engine::logging::*;
 use architecture::net::config::*;
-use architecture::net::protocol::message::*;
 use architecture::net::server_sim::*;
 use architecture::net::stepper::*;
 use architecture::net::transport::*;
-use bitcode::{decode, encode};
-use renet::{DefaultChannel, ServerEvent};
 use std::env;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::time::Duration;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     init_logging("dedicated_server.log".to_string())?;
@@ -48,57 +44,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     while running.load(Ordering::SeqCst) {
         server_stepper.wait_and_run(|| {
-            let dt = Duration::from_secs_f32(fixed_dt);
-
-            server.update(dt);
-
-            if let Err(e) = server_transport.update(dt, &mut server) {
-                log::error!("[Dedicated Server] Server transport update error: {}", e);
-                return;
-            };
-
-            while let Some(event) = server.get_event() {
-                match event {
-                    ServerEvent::ClientConnected { client_id } => {
-                        log::info!("[Dedicated Server] Client connected: {}", client_id);
-
-                        sim.spawn_player(client_id);
-                    }
-                    ServerEvent::ClientDisconnected { client_id, reason } => {
-                        log::info!(
-                            "[Dedicated Server] Client disconnected: {}, {}",
-                            client_id,
-                            reason
-                        );
-
-                        sim.despawn_player(client_id);
-                    }
-                }
-            }
-
-            // Clear old client inputs
-            sim.reset_player_velocities();
-            // Process new client inputs
-            let client_ids: Vec<u64> = server.clients_id_iter().collect();
-            for client_id in client_ids {
-                while let Some(bytes) =
-                    server.receive_message(client_id, DefaultChannel::ReliableOrdered)
-                {
-                    if let Ok(ClientMessage::Input(input)) = decode(bytes.as_ref()) {
-                        sim.handle_input(client_id, input);
-                    }
-                }
-            }
-
-            let snapshot = sim.step();
-
-            let any_clients = server.clients_id_iter().next().is_some();
-            if any_clients {
-                let msg = ServerMessage::Snapshot(snapshot);
-                server.broadcast_message(DefaultChannel::Unreliable, encode(&msg));
-            }
-
-            server_transport.send_packets(&mut server);
+            update_server(
+                "Dedicated Server".to_string(),
+                &mut server,
+                &mut server_transport,
+                &mut sim,
+                fixed_dt,
+            );
         });
     }
 

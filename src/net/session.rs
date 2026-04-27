@@ -166,59 +166,19 @@ impl GameSession for LocalSession {
         let mut should_disconnect = false;
 
         self.stepper.run_steps(fixed_dt, || {
-            let dt = Duration::from_secs_f32(fixed_dt);
+            // Update server
 
-            // Update local server
-
-            server.update(dt);
-
-            if let Err(e) = server_transport.update(dt, server) {
-                log::error!("[Local Server] Server transport update error: {}", e);
-                should_disconnect = true;
-                return;
-            }
-
-            while let Some(event) = server.get_event() {
-                match event {
-                    ServerEvent::ClientConnected { client_id } => {
-                        log::info!("[Local Server] Client connected: {}", client_id);
-                        self.sim.reset();
-
-                        self.sim.spawn_player(client_id);
-                    }
-                    ServerEvent::ClientDisconnected {
-                        client_id,
-                        reason: _,
-                    } => {
-                        self.sim.despawn_player(client_id);
-                    }
-                }
-            }
-
-            // Clear old client inputs
-            self.sim.reset_player_velocities();
-            // Process new client inputs
-            let client_ids: Vec<u64> = server.clients_id_iter().collect();
-            for client_id in client_ids {
-                while let Some(bytes) =
-                    server.receive_message(client_id, DefaultChannel::ReliableOrdered)
-                {
-                    if let Ok(ClientMessage::Input(input)) = decode(bytes.as_ref()) {
-                        self.sim.handle_input(client_id, input);
-                    }
-                }
-            }
-
-            let any_clients = server.clients_id_iter().next().is_some();
-            if any_clients {
-                let snapshot = self.sim.step();
-                let msg = ServerMessage::Snapshot(snapshot);
-                server.broadcast_message(DefaultChannel::Unreliable, encode(&msg));
-            }
-
-            server_transport.send_packets(server);
+            update_server(
+                "Local Server".into(),
+                server,
+                server_transport,
+                &mut self.sim,
+                fixed_dt,
+            );
 
             // Update client
+
+            let dt = Duration::from_secs_f32(fixed_dt);
 
             client.update(dt);
 
@@ -339,9 +299,9 @@ impl GameSession for RemoteSession {
         let mut should_disconnect = false;
 
         self.stepper.run_steps(fixed_dt, || {
-            let dt = Duration::from_secs_f32(fixed_dt);
-
             // Update client
+
+            let dt = Duration::from_secs_f32(fixed_dt);
 
             client.update(dt);
 

@@ -1,11 +1,14 @@
 use crate::net::config::*;
-use renet::{ConnectionConfig, RenetClient, RenetServer};
+use crate::net::protocol::message::*;
+use crate::net::server_sim::*;
+use bitcode::{decode, encode};
+use renet::{ConnectionConfig, DefaultChannel, RenetClient, RenetServer, ServerEvent};
 use renet_netcode::{
     ClientAuthentication, NetcodeClientTransport, NetcodeServerTransport, ServerAuthentication,
     ServerConfig,
 };
 use std::net::{SocketAddr, UdpSocket};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 pub fn create_server(
     addr: String,
@@ -30,6 +33,60 @@ pub fn create_server(
     let server_transport = NetcodeServerTransport::new(server_config, server_socket)?;
 
     Ok((server, server_transport, server_addr))
+}
+
+pub fn update_server(
+    server_type: String,
+    server: &mut RenetServer,
+    server_transport: &mut NetcodeServerTransport,
+    sim: &mut ServerSim,
+    fixed_dt: f32,
+) {
+    let dt = Duration::from_secs_f32(fixed_dt);
+
+    server.update(dt);
+
+    if let Err(e) = server_transport.update(dt, server) {
+        log::error!("[{server_type}] Server transport update error: {e}");
+        return;
+    }
+
+    while let Some(event) = server.get_event() {
+        match event {
+            ServerEvent::ClientConnected { client_id } => {
+                log::info!("[{server_type}] Client connected: {client_id}");
+
+                sim.spawn_player(client_id);
+            }
+            ServerEvent::ClientDisconnected { client_id, reason } => {
+                log::info!("[{server_type}] Client disconnected: {client_id}, {reason}");
+
+                sim.despawn_player(client_id);
+            }
+        }
+    }
+
+    // Clear old client inputs
+    sim.reset_player_velocities();
+    // Process new client inputs
+    let client_ids: Vec<u64> = server.clients_id_iter().collect();
+    for client_id in client_ids {
+        while let Some(bytes) = server.receive_message(client_id, DefaultChannel::ReliableOrdered) {
+            if let Ok(ClientMessage::Input(input)) = decode(bytes.as_ref()) {
+                sim.handle_input(client_id, input);
+            }
+        }
+    }
+
+    let snapshot = sim.step();
+
+    let any_clients = server.clients_id_iter().next().is_some();
+    if any_clients {
+        let msg = ServerMessage::Snapshot(snapshot);
+        server.broadcast_message(DefaultChannel::Unreliable, encode(&msg));
+    }
+
+    server_transport.send_packets(server);
 }
 
 pub fn create_client(
