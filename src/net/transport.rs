@@ -1,5 +1,6 @@
 use crate::net::config::*;
 use crate::net::protocol::message::*;
+use crate::net::protocol::snapshot::*;
 use crate::net::server_sim::*;
 use bitcode::{decode, encode};
 use renet::{ConnectionConfig, DefaultChannel, RenetClient, RenetServer, ServerEvent};
@@ -111,4 +112,32 @@ pub fn create_client(
         NetcodeClientTransport::new(current_time, authentication, client_socket)?;
 
     Ok((client, client_transport))
+}
+
+pub fn update_client(
+    client: &mut RenetClient,
+    client_transport: &mut NetcodeClientTransport,
+    latest_snapshot: &mut Option<ServerWorldSnapshot>,
+    should_disconnect: &mut bool,
+    fixed_dt: f32,
+) {
+    let dt = Duration::from_secs_f32(fixed_dt);
+
+    client.update(dt);
+
+    if let Err(e) = client_transport.update(dt, client) {
+        log::error!("[Client] Client transport update error: {}", e);
+        *should_disconnect = true;
+        return;
+    }
+
+    while let Some(bytes) = client.receive_message(DefaultChannel::Unreliable) {
+        if let Ok(ServerMessage::Snapshot(snapshot)) = decode(bytes.as_ref()) {
+            *latest_snapshot = Some(snapshot);
+        }
+    }
+
+    if let Err(e) = client_transport.send_packets(client) {
+        log::error!("[Client] Send packets error: {}", e);
+    }
 }

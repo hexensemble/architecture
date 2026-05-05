@@ -6,16 +6,15 @@ use crate::net::protocol::snapshot::*;
 use crate::net::server_sim::*;
 use crate::net::stepper::*;
 use crate::net::transport::*;
-use bitcode::{decode, encode};
+use bitcode::encode;
 use renet::{DefaultChannel, RenetClient, RenetServer, ServerEvent};
 use renet_netcode::{NetcodeClientTransport, NetcodeServerTransport};
 use std::net::SocketAddr;
-use std::time::Duration;
 
 pub trait GameSession {
     fn connect(&mut self) -> Result<(), Box<dyn std::error::Error>>;
-    fn disconnect(&mut self);
     fn update(&mut self, frame_dt: f32);
+    fn disconnect(&mut self);
     fn send_input(&mut self, input: PlayerInput);
     fn latest_snapshot(&self) -> Option<&ServerWorldSnapshot>;
 }
@@ -96,6 +95,49 @@ impl GameSession for LocalSession {
         Ok(())
     }
 
+    fn update(&mut self, frame_dt: f32) {
+        let (Some(server), Some(server_transport), Some(client), Some(client_transport)) = (
+            self.server.as_mut(),
+            self.server_transport.as_mut(),
+            self.client.as_mut(),
+            self.client_transport.as_mut(),
+        ) else {
+            return;
+        };
+
+        if client.is_connected() && !self.client_connected {
+            self.client_connected = true;
+            log::info!("[Client] Connected to server");
+        }
+
+        self.stepper.add_time(frame_dt.max(0.0));
+        let fixed_dt = self.sim.fixed_dt();
+
+        let mut should_disconnect = false;
+
+        self.stepper.run_steps(fixed_dt, || {
+            update_server(
+                "Local Server".into(),
+                server,
+                server_transport,
+                &mut self.sim,
+                fixed_dt,
+            );
+
+            update_client(
+                client,
+                client_transport,
+                &mut self.latest_snapshot,
+                &mut should_disconnect,
+                fixed_dt,
+            );
+        });
+
+        if should_disconnect {
+            self.disconnect();
+        }
+    }
+
     fn disconnect(&mut self) {
         // Disconnect Client
 
@@ -143,65 +185,6 @@ impl GameSession for LocalSession {
         self.server_transport = None;
 
         self.latest_snapshot = None;
-    }
-
-    fn update(&mut self, frame_dt: f32) {
-        let (Some(server), Some(server_transport), Some(client), Some(client_transport)) = (
-            self.server.as_mut(),
-            self.server_transport.as_mut(),
-            self.client.as_mut(),
-            self.client_transport.as_mut(),
-        ) else {
-            return;
-        };
-
-        if client.is_connected() && !self.client_connected {
-            self.client_connected = true;
-            log::info!("[Client] Connected to server");
-        }
-
-        self.stepper.add_time(frame_dt.max(0.0));
-        let fixed_dt = self.sim.fixed_dt();
-
-        let mut should_disconnect = false;
-
-        self.stepper.run_steps(fixed_dt, || {
-            // Update server
-
-            update_server(
-                "Local Server".into(),
-                server,
-                server_transport,
-                &mut self.sim,
-                fixed_dt,
-            );
-
-            // Update client
-
-            let dt = Duration::from_secs_f32(fixed_dt);
-
-            client.update(dt);
-
-            if let Err(e) = client_transport.update(dt, client) {
-                log::error!("[Client] Client transport update error: {}", e);
-                should_disconnect = true;
-                return;
-            }
-
-            while let Some(bytes) = client.receive_message(DefaultChannel::Unreliable) {
-                if let Ok(ServerMessage::Snapshot(snapshot)) = decode(bytes.as_ref()) {
-                    self.latest_snapshot = Some(snapshot);
-                }
-            }
-
-            if let Err(e) = client_transport.send_packets(client) {
-                log::error!("[Client] Send packets error: {}", e);
-            }
-        });
-
-        if should_disconnect {
-            self.disconnect();
-        }
     }
 
     fn send_input(&mut self, input: PlayerInput) {
@@ -261,26 +244,6 @@ impl GameSession for RemoteSession {
         Ok(())
     }
 
-    fn disconnect(&mut self) {
-        // Disconnect Client
-
-        if let (Some(client), Some(client_transport)) =
-            (self.client.as_mut(), self.client_transport.as_mut())
-        {
-            client.disconnect();
-
-            // Flush packets
-            let _ = client_transport.send_packets(client);
-
-            log::info!("[Client] Disconnected from server")
-        }
-
-        self.client = None;
-        self.client_transport = None;
-
-        self.latest_snapshot = None;
-    }
-
     fn update(&mut self, frame_dt: f32) {
         let (Some(client), Some(client_transport)) =
             (self.client.as_mut(), self.client_transport.as_mut())
@@ -299,27 +262,13 @@ impl GameSession for RemoteSession {
         let mut should_disconnect = false;
 
         self.stepper.run_steps(fixed_dt, || {
-            // Update client
-
-            let dt = Duration::from_secs_f32(fixed_dt);
-
-            client.update(dt);
-
-            if let Err(e) = client_transport.update(dt, client) {
-                log::error!("[Client] Client transport update error: {}", e);
-                should_disconnect = true;
-                return;
-            }
-
-            while let Some(bytes) = client.receive_message(DefaultChannel::Unreliable) {
-                if let Ok(ServerMessage::Snapshot(snapshot)) = decode(bytes.as_ref()) {
-                    self.latest_snapshot = Some(snapshot);
-                }
-            }
-
-            if let Err(e) = client_transport.send_packets(client) {
-                log::error!("[Client] Send packets error: {}", e);
-            }
+            update_client(
+                client,
+                client_transport,
+                &mut self.latest_snapshot,
+                &mut should_disconnect,
+                fixed_dt,
+            );
         });
 
         if should_disconnect {
@@ -333,6 +282,26 @@ impl GameSession for RemoteSession {
 
     fn latest_snapshot(&self) -> Option<&ServerWorldSnapshot> {
         self.latest_snapshot.as_ref()
+    }
+
+    fn disconnect(&mut self) {
+        // Disconnect Client
+
+        if let (Some(client), Some(client_transport)) =
+            (self.client.as_mut(), self.client_transport.as_mut())
+        {
+            client.disconnect();
+
+            // Flush packets
+            let _ = client_transport.send_packets(client);
+
+            log::info!("[Client] Disconnected from server")
+        }
+
+        self.client = None;
+        self.client_transport = None;
+
+        self.latest_snapshot = None;
     }
 }
 
