@@ -144,12 +144,7 @@ impl GameSession for LocalSession {
         if let (Some(client), Some(client_transport)) =
             (self.client.as_mut(), self.client_transport.as_mut())
         {
-            client.disconnect();
-
-            // Flush packets
-            let _ = client_transport.send_packets(client);
-
-            log::info!("[Client] Disconnected from server")
+            disconnect_client(client, client_transport);
         }
 
         // Disconnect Server
@@ -290,12 +285,7 @@ impl GameSession for RemoteSession {
         if let (Some(client), Some(client_transport)) =
             (self.client.as_mut(), self.client_transport.as_mut())
         {
-            client.disconnect();
-
-            // Flush packets
-            let _ = client_transport.send_packets(client);
-
-            log::info!("[Client] Disconnected from server")
+            disconnect_client(client, client_transport);
         }
 
         self.client = None;

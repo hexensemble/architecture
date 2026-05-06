@@ -141,3 +141,12 @@ pub fn update_client(
         log::error!("[Client] Send packets error: {}", e);
     }
 }
+
+pub fn disconnect_client(client: &mut RenetClient, client_transport: &mut NetcodeClientTransport) {
+    client.disconnect();
+
+    // Flush packets
+    let _ = client_transport.send_packets(client);
+
+    log::info!("[Client] Disconnected from server")
+}
