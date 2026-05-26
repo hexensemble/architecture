@@ -22,14 +22,16 @@ impl Layer<Action> for PauseLayer {
     }
 
     fn on_render(&mut self, ctx: &AppContext<Action>, d: &mut RaylibDrawHandle) {
-        d.draw_text("This is the pause layer!", 200, 200, 30, Color::RED);
+        d.draw_text(
+            "Paused",
+            (ctx.settings.width / 2) - 55,
+            (ctx.settings.height / 2) - 15,
+            30,
+            Color::RED,
+        );
     }
 
-    fn on_attach(&mut self, ctx: &mut AppContext<Action>) {
-        println!("Attaching pause layer...");
-    }
+    fn on_attach(&mut self, ctx: &mut AppContext<Action>) {}
 
-    fn on_detach(&mut self, ctx: &mut AppContext<Action>) {
-        println!("Detaching pause layer...");
-    }
+    fn on_detach(&mut self, ctx: &mut AppContext<Action>) {}
 }

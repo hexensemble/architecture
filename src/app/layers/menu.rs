@@ -36,14 +36,12 @@ impl Layer<Action> for MenuLayer {
     }
 
     fn on_render(&mut self, ctx: &AppContext<Action>, d: &mut RaylibDrawHandle) {
-        d.draw_text("This is the menu layer!", 12, 12, 20, Color::BLACK);
+        d.draw_text("Main Menu", 20, 20, 20, Color::BLUE);
+        d.draw_text("Space -> Game", 20, 50, 20, Color::BLACK);
+        d.draw_text("Q -> Quit", 20, 80, 20, Color::BLACK);
     }
 
-    fn on_attach(&mut self, ctx: &mut AppContext<Action>) {
-        println!("Attaching menu layer...");
-    }
+    fn on_attach(&mut self, ctx: &mut AppContext<Action>) {}
 
-    fn on_detach(&mut self, ctx: &mut AppContext<Action>) {
-        println!("Detaching menu layer...");
-    }
+    fn on_detach(&mut self, ctx: &mut AppContext<Action>) {}
 }
