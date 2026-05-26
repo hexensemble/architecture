@@ -32,11 +32,10 @@ impl ServerSim {
         self.tick = 0;
         self.server_world.reset();
 
-        // Spawn demo entities
-        self.server_world
-            .spawn_demo_entity(100.0, 100.0, 10.0, 10.0);
-        self.server_world
-            .spawn_demo_entity(500.0, 500.0, -10.0, -10.0);
+        self.server_world.spawn_enemy(400.0, 300.0, 20.0, 20.0);
+        self.server_world.spawn_enemy(400.0, 300.0, 20.0, -20.0);
+        self.server_world.spawn_enemy(400.0, 300.0, -20.0, 20.0);
+        self.server_world.spawn_enemy(400.0, 300.0, -20.0, -20.0);
     }
 
     pub fn spawn_player(&mut self, client_id: u64) {

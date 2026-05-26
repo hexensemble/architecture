@@ -3,7 +3,7 @@ use hecs::World;
 
 pub fn movement(world: &World, dt: f32) {
     for (id, (pos, vel)) in world.query::<(&mut Position, &Velocity)>().iter() {
-        pos.x += vel.x * dt;
-        pos.y += vel.y * dt;
+        pos.x = (pos.x + vel.x * dt).clamp(0.0, 800.0);
+        pos.y = (pos.y + vel.y * dt).clamp(0.0, 600.0);
     }
 }

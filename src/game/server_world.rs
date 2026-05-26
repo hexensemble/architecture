@@ -39,7 +39,7 @@ impl ServerWorld {
         id
     }
 
-    pub fn spawn_demo_entity(&mut self, x: f32, y: f32, vel_x: f32, vel_y: f32) -> u32 {
+    pub fn spawn_enemy(&mut self, x: f32, y: f32, vel_x: f32, vel_y: f32) -> u32 {
         let id = self.next_net_id.0;
         self.next_net_id = NetId(id + 1);
 
