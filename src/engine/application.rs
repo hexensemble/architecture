@@ -22,6 +22,11 @@ impl<A: ActionType> Application<A> {
             .title(&settings.title)
             .build();
 
+        // Disable KEY_ESCAPE as exit key
+        unsafe {
+            ffi::SetExitKey(0);
+        }
+
         rl.set_target_fps(settings.fps);
 
         let bindings = InputBindings::new(&settings.serialized_bindings);
