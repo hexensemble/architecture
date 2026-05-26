@@ -1,5 +1,6 @@
 use crate::game::ecs::components::movement::*;
 use crate::game::ecs::components::player::*;
+use hecs::Entity;
 use hecs::World;
 
 #[derive(Debug, Clone, Copy)]
@@ -55,7 +56,7 @@ impl ServerWorld {
     pub fn despawn_player(&mut self, client_id: u64) {
         let mut to_despawn = None;
 
-        for (entity, owner) in self.world.query::<&ClientOwner>().iter() {
+        for (entity, owner) in self.world.query::<(Entity, &ClientOwner)>().iter() {
             if owner.0 == client_id {
                 to_despawn = Some(entity);
                 break;

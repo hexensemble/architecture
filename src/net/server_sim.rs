@@ -47,7 +47,7 @@ impl ServerSim {
     }
 
     pub fn handle_input(&mut self, client_id: u64, input: PlayerInput) {
-        for (_, (owner, vel)) in self
+        for (owner, vel) in self
             .server_world
             .world()
             .query::<(&ClientOwner, &mut Velocity)>()
@@ -67,7 +67,7 @@ impl ServerSim {
     }
 
     pub fn reset_player_velocities(&mut self) {
-        for (_, (_, vel)) in self
+        for (_, vel) in self
             .server_world
             .world()
             .query::<(&ClientOwner, &mut Velocity)>()
