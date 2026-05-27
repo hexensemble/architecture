@@ -42,20 +42,20 @@ impl<A: ActionType> InputBindings<A> {
 #[derive(Serialize, Deserialize)]
 #[serde(bound(deserialize = "A: DeserializeOwned"))]
 pub struct SerializedBindings<A: ActionType> {
-    pub key_bindings: HashMap<SerializeableKey, A>,
-    pub pad_bindings: HashMap<SerializeablePad, A>,
+    pub key_bindings: HashMap<SerializableKey, A>,
+    pub pad_bindings: HashMap<SerializablePad, A>,
 }
 
 impl<A: ActionType> Default for SerializedBindings<A> {
     fn default() -> Self {
         let mut keys = HashMap::new();
         for (key, action) in A::default_key_bindings() {
-            keys.insert(SerializeableKey(key), action);
+            keys.insert(SerializableKey(key), action);
         }
 
         let mut pads = HashMap::new();
         for (pad, action) in A::default_pad_bindings() {
-            pads.insert(SerializeablePad(pad), action);
+            pads.insert(SerializablePad(pad), action);
         }
 
         Self {
@@ -66,15 +66,15 @@ impl<A: ActionType> Default for SerializedBindings<A> {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub struct SerializeableKey(pub KeyboardKey);
+pub struct SerializableKey(pub KeyboardKey);
 
-impl Display for SerializeableKey {
+impl Display for SerializableKey {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{:?}", self.0)
     }
 }
 
-impl FromStr for SerializeableKey {
+impl FromStr for SerializableKey {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -210,11 +210,11 @@ impl FromStr for SerializeableKey {
             _ => return Err(format!("Unknown key: {}", s)),
         };
 
-        Ok(SerializeableKey(key))
+        Ok(SerializableKey(key))
     }
 }
 
-impl Serialize for SerializeableKey {
+impl Serialize for SerializableKey {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -223,27 +223,27 @@ impl Serialize for SerializeableKey {
     }
 }
 
-impl<'de> Deserialize<'de> for SerializeableKey {
+impl<'de> Deserialize<'de> for SerializableKey {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
 
-        SerializeableKey::from_str(&s).map_err(serde::de::Error::custom)
+        SerializableKey::from_str(&s).map_err(serde::de::Error::custom)
     }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub struct SerializeablePad(pub GamepadButton);
+pub struct SerializablePad(pub GamepadButton);
 
-impl Display for SerializeablePad {
+impl Display for SerializablePad {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{:?}", self.0)
     }
 }
 
-impl FromStr for SerializeablePad {
+impl FromStr for SerializablePad {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -279,11 +279,11 @@ impl FromStr for SerializeablePad {
             _ => return Err(format!("Unknown key: {}", s)),
         };
 
-        Ok(SerializeablePad(pad))
+        Ok(SerializablePad(pad))
     }
 }
 
-impl Serialize for SerializeablePad {
+impl Serialize for SerializablePad {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -292,13 +292,13 @@ impl Serialize for SerializeablePad {
     }
 }
 
-impl<'de> Deserialize<'de> for SerializeablePad {
+impl<'de> Deserialize<'de> for SerializablePad {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
 
-        SerializeablePad::from_str(&s).map_err(serde::de::Error::custom)
+        SerializablePad::from_str(&s).map_err(serde::de::Error::custom)
     }
 }
