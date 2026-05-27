@@ -58,12 +58,11 @@ impl Layer<Action> for GameLayer {
     }
 
     fn on_render(&mut self, ctx: &AppContext<Action>, d: &mut RaylibDrawHandle) {
-        d.draw_text("Game", 20, 20, 20, Color::BLUE);
-        d.draw_text("Space -> Menu", 20, 50, 20, Color::BLACK);
-        d.draw_text("Q -> Quit", 20, 80, 20, Color::BLACK);
-        d.draw_text("P -> Pause", 20, 110, 20, Color::BLACK);
-
         if let Some(snapshot) = &self.session.latest_snapshot() {
+            for entity in snapshot.entity_positions() {
+                d.draw_circle(entity.x as i32, entity.y as i32, 10.0, Color::BLUE);
+            }
+
             d.draw_text(
                 &format!("Server tick: {}", snapshot.snapshot_tick()),
                 20,
@@ -71,13 +70,14 @@ impl Layer<Action> for GameLayer {
                 20,
                 Color::BLACK,
             );
-
-            for entity in snapshot.entity_positions() {
-                d.draw_circle(entity.x as i32, entity.y as i32, 10.0, Color::BLUE);
-            }
         } else {
             d.draw_text("Waiting for snapshot...", 20, 170, 20, Color::DARKGRAY);
         }
+
+        d.draw_text("Game", 20, 20, 20, Color::BLUE);
+        d.draw_text("Space -> Menu", 20, 50, 20, Color::BLACK);
+        d.draw_text("Q -> Quit", 20, 80, 20, Color::BLACK);
+        d.draw_text("P -> Pause", 20, 110, 20, Color::BLACK);
     }
 
     fn on_attach(&mut self, ctx: &mut AppContext<Action>) {
