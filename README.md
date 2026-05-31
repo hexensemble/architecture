@@ -17,6 +17,10 @@ A small Rust demo exploring two patterns I wanted to implement and showcase:
 
 <br>
 
+![Architecture](preview.png)
+
+<br>
+
 ***Linux***
 
 Prebuilt binaries available, `architecture` and `dedicated_server`.
