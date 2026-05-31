@@ -14,3 +14,30 @@ A small Rust demo exploring two patterns I wanted to implement and showcase:
 2. **Client/server game session** - The same client binary can run a fully
    integrated local server, or connect to a standalone dedicated server binary,
    selected via `settings.json`.
+
+<br>
+
+***Linux***
+
+Prebuilt binaries available, `architecture` and `dedicated_server`.
+
+**Download:** https://github.com/hexensemble/architecture/releases
+
+<br>
+
+***Other platforms***
+
+Build or run from source with:
+
+```
+--bin architecture
+--bin dedicated_server
+```
+
+<br>
+
+**Usage**
+
+First run of `architecture` will generate a `settings.json` file from where you can configure various options. Default session is local.
+
+To run a remote session change *mode* under *net_settings* from *Local* to *Remote* then run `dedicated_server`. Run `architecture` and it will now connect to the dedicated server.
